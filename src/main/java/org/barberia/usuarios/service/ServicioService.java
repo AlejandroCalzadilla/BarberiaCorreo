@@ -1,10 +1,12 @@
 package org.barberia.usuarios.service;
 
+import java.math.BigDecimal;
+
 import org.barberia.usuarios.domain.Servicio;
+import org.barberia.usuarios.domain.enums.EstadoItem;
 import org.barberia.usuarios.mapper.ServicioMapper;
 import org.barberia.usuarios.repository.ServicioRepository;
 import org.barberia.usuarios.validation.ServicioValidator;
-
 
 public class ServicioService {
     private final ServicioRepository repo;
@@ -25,18 +27,42 @@ public class ServicioService {
         return repo.findById(id).map(ServicioMapper::obtenerUnoTable).orElse("No se encontró servicio con id=" + id);
     }
 
-    public Servicio create(Servicio s) {
+    public Servicio create(String nombre,
+            String descripcion,
+            Integer duracion_minutos_aprox,
+            BigDecimal precio,
+            String imagen) {
+        Servicio s = new Servicio(
+                nombre,
+                descripcion,
+                duracion_minutos_aprox,
+                precio,
+                EstadoItem.activo,
+                imagen);
         validator.validar(s);
         return repo.save(s);
     }
 
-    public Servicio update(Integer id, Servicio s) {
-        validator.validar(s);
+    public Servicio update(Integer id,String nombre, String descripcion,
+            Integer duracion_minutos_aprox,
+            BigDecimal precio,
+            String imagen) {
+        Servicio s =new Servicio (
+            nombre,
+            descripcion,
+            duracion_minutos_aprox,
+            precio,
+            EstadoItem.activo,
+            imagen
+        );  
         s.id_servicio = id;
+        validator.validar(s);
         return repo.save(s);
     }
 
-    public void delete(Integer id) {
+    public String delete(Integer id) {
         repo.deleteById(id);
+        return "Servicio con id=" + id + " eliminado (soft delete) " +
+                "\n" + getByIdAsTable(id);
     }
 }

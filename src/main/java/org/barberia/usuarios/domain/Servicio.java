@@ -6,8 +6,25 @@ import java.time.LocalDateTime;
 import org.barberia.usuarios.domain.enums.EstadoItem;
 
 public class Servicio {
+
+
+    public Servicio(){
+        
+    };
+    public Servicio(String nombre,
+            String descripcion,
+            Integer duracion_minutos_aprox,
+            BigDecimal precio,
+            EstadoItem estado,
+            String imagen) {
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.duracion_minutos_aprox = duracion_minutos_aprox;
+        this.precio = precio;
+        this.estado = estado;
+        this.imagen = imagen;
+    }
     public Integer id_servicio;
-   
     public String nombre;
     public String descripcion;
     public Integer duracion_minutos_aprox;

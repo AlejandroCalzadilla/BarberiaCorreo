@@ -16,7 +16,7 @@ public class BarberoSeeder {
 
     public List<Barbero> seed() {
         List<Barbero> barberos = new ArrayList<>();
-        Barbero barbero1 = new Barbero();
+        /* Barbero barbero1 = new Barbero();
         barbero1.especialidad = "Cortes de cabello y afeitados clásicos";
         barbero1.estado = barbero1.estado.disponible;
         barbero1.foto_perfil = "https://example.com/images/barbero1.jpg";
@@ -35,7 +35,7 @@ public class BarberoSeeder {
         barbero3.estado = barbero3.estado.disponible;
         barbero3.foto_perfil = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTEq7a5yy4t6p3tOBzQCf9wrpMcqwqH8S-JvA&s";
         barbero3.id_usuario = 8;
-        barberos.add(barberoService.create(barbero3));
+        barberos.add(barberoService.create(barbero3)); */
         return barberos;
     }
 

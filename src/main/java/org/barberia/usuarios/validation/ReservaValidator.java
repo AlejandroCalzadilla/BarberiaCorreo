@@ -12,6 +12,6 @@ public class ReservaValidator {
         if (!r.hora_fin.isAfter(r.hora_inicio)) throw new IllegalArgumentException("hora_fin debe ser mayor a hora_inicio");
         if (r.precio_servicio != null && r.precio_servicio.signum() < 0) throw new IllegalArgumentException("precio_servicio >= 0");
         if (r.monto_anticipo != null && r.monto_anticipo.signum() < 0) throw new IllegalArgumentException("monto_anticipo >= 0");
-        if (r.porcentaje_anticipo != null && (r.porcentaje_anticipo.signum() < 0 || r.porcentaje_anticipo.doubleValue() > 100.0)) throw new IllegalArgumentException("porcentaje_anticipo en [0,100]");
+       // if (r.porcentaje_anticipo != null && (r.porcentaje_anticipo.signum() < 0 || r.porcentaje_anticipo.doubleValue() > 100.0)) throw new IllegalArgumentException("porcentaje_anticipo en [0,100]");
     }
 }

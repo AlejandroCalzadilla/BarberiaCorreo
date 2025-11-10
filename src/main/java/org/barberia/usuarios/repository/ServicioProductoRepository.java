@@ -7,7 +7,9 @@ import java.util.Optional;
 
 public interface ServicioProductoRepository {
     List<ServicioProducto> findAll();
-    Optional<ServicioProducto> findById(Integer id);
-    ServicioProducto save(ServicioProducto sp);
-    void deleteById(Integer id);
+    List<ServicioProducto> findByServicioId(Integer id);
+    List<ServicioProducto> findByProductoId(Integer id);
+    ServicioProducto insert(ServicioProducto sp);
+    ServicioProducto update(ServicioProducto sp);
+    void delete(Integer id_servicio, Integer id_producto);
 }

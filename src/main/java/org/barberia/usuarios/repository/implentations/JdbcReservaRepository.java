@@ -13,7 +13,7 @@ import java.util.Optional;
 public class JdbcReservaRepository implements ReservaRepository {
     @Override
     public List<Reserva> findAll() {
-        String sql = "SELECT id_reserva, id_cliente, id_barbero, id_servicio, fecha_reserva, hora_inicio, hora_fin, estado, total, notas, fecha_creacion, precio_servicio, monto_anticipo, porcentaje_anticipo, created_at, updated_at FROM reserva ORDER BY id_reserva";
+        String sql = "SELECT id_reserva, id_cliente, id_barbero, id_servicio, fecha_reserva, hora_inicio, hora_fin, estado, total, notas, fecha_creacion, monto_anticipo, created_at, updated_at FROM reserva ORDER BY id_reserva";
         List<Reserva> list = new ArrayList<>();
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) list.add(mapRow(rs));
@@ -23,7 +23,7 @@ public class JdbcReservaRepository implements ReservaRepository {
 
     @Override
     public Optional<Reserva> findById(Integer id) {
-        String sql = "SELECT id_reserva, id_cliente, id_barbero, id_servicio, fecha_reserva, hora_inicio, hora_fin, estado, total, notas, fecha_creacion, precio_servicio, monto_anticipo, porcentaje_anticipo, created_at, updated_at FROM reserva WHERE id_reserva=?";
+        String sql = "SELECT id_reserva, id_cliente, id_barbero, id_servicio, fecha_reserva, hora_inicio, hora_fin, estado, total, notas, monto_anticipo, created_at, updated_at FROM reserva WHERE id_reserva=?";
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) { if (rs.next()) return Optional.of(mapRow(rs)); }
@@ -38,7 +38,7 @@ public class JdbcReservaRepository implements ReservaRepository {
     }
 
     private Reserva insert(Reserva r) {
-        String sql = "INSERT INTO reserva (id_cliente, id_barbero, id_servicio, fecha_reserva, hora_inicio, hora_fin, estado, total, notas, precio_servicio, monto_anticipo, porcentaje_anticipo) VALUES (?,?,?,?,?,?,?::estado_reserva,?,?, ?, ?, ?) RETURNING id_reserva, fecha_creacion, created_at, updated_at";
+        String sql = "INSERT INTO reserva (id_cliente, id_barbero, id_servicio, fecha_reserva, hora_inicio, hora_fin, estado, total, notas, monto_anticipo) VALUES (?,?,?,?,?,?,?::estado_reserva,?,?, ?) RETURNING id_reserva, created_at, updated_at";
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, r.id_cliente);
             ps.setInt(2, r.id_barbero);
@@ -49,16 +49,12 @@ public class JdbcReservaRepository implements ReservaRepository {
             ps.setString(7, r.estado != null ? r.estado.name() : EstadoReserva.pendiente_pago.name());
             ps.setBigDecimal(8, r.total);
             ps.setString(9, r.notas);
-            ps.setBigDecimal(10, r.precio_servicio);
-            ps.setBigDecimal(11, r.monto_anticipo);
-            ps.setBigDecimal(12, r.porcentaje_anticipo);
+            ps.setBigDecimal(10, r.monto_anticipo);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     r.id_reserva = rs.getInt("id_reserva");
-                    Timestamp fc = rs.getTimestamp("fecha_creacion");
                     Timestamp cr = rs.getTimestamp("created_at");
                     Timestamp up = rs.getTimestamp("updated_at");
-                    r.fecha_creacion = fc != null ? fc.toLocalDateTime() : null;
                     r.created_at = cr != null ? cr.toLocalDateTime() : null;
                     r.updated_at = up != null ? up.toLocalDateTime() : null;
                 }
@@ -68,7 +64,7 @@ public class JdbcReservaRepository implements ReservaRepository {
     }
 
     private Reserva update(Reserva r) {
-        String sql = "UPDATE reserva SET id_cliente=?, id_barbero=?, id_servicio=?, fecha_reserva=?, hora_inicio=?, hora_fin=?, estado=?::estado_reserva, total=?, notas=?, precio_servicio=?, monto_anticipo=?, porcentaje_anticipo=?, updated_at=now() WHERE id_reserva=? RETURNING fecha_creacion, created_at, updated_at";
+        String sql = "UPDATE reserva SET id_cliente=?, id_barbero=?, id_servicio=?, fecha_reserva=?, hora_inicio=?, hora_fin=?, estado=?::estado_reserva, total=?, notas=?, monto_anticipo=?, updated_at=now() WHERE id_reserva=? RETURNING created_at, updated_at";
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, r.id_cliente);
             ps.setInt(2, r.id_barbero);
@@ -79,16 +75,12 @@ public class JdbcReservaRepository implements ReservaRepository {
             ps.setString(7, r.estado != null ? r.estado.name() : EstadoReserva.pendiente_pago.name());
             ps.setBigDecimal(8, r.total);
             ps.setString(9, r.notas);
-            ps.setBigDecimal(10, r.precio_servicio);
-            ps.setBigDecimal(11, r.monto_anticipo);
-            ps.setBigDecimal(12, r.porcentaje_anticipo);
-            ps.setInt(13, r.id_reserva);
+            ps.setBigDecimal(10, r.monto_anticipo);
+            ps.setInt(11, r.id_reserva);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    Timestamp fc = rs.getTimestamp("fecha_creacion");
                     Timestamp cr = rs.getTimestamp("created_at");
                     Timestamp up = rs.getTimestamp("updated_at");
-                    r.fecha_creacion = fc != null ? fc.toLocalDateTime() : null;
                     r.created_at = cr != null ? cr.toLocalDateTime() : null;
                     r.updated_at = up != null ? up.toLocalDateTime() : null;
                 }
@@ -118,10 +110,7 @@ public class JdbcReservaRepository implements ReservaRepository {
         String est = rs.getString("estado"); if (est != null) r.estado = EstadoReserva.valueOf(est);
         r.total = rs.getBigDecimal("total");
         r.notas = rs.getString("notas");
-        Timestamp fc = rs.getTimestamp("fecha_creacion"); r.fecha_creacion = fc != null ? fc.toLocalDateTime() : null;
-        r.precio_servicio = rs.getBigDecimal("precio_servicio");
         r.monto_anticipo = rs.getBigDecimal("monto_anticipo");
-        r.porcentaje_anticipo = rs.getBigDecimal("porcentaje_anticipo");
         Timestamp cr = rs.getTimestamp("created_at"); r.created_at = cr != null ? cr.toLocalDateTime() : null;
         Timestamp up = rs.getTimestamp("updated_at"); r.updated_at = up != null ? up.toLocalDateTime() : null;
         return r;

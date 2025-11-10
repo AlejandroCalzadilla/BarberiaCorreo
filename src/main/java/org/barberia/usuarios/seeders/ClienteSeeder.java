@@ -17,7 +17,7 @@ public class ClienteSeeder {
     }
 
     public void seed() {
-        Cliente cliente1 = new Cliente();
+        /* Cliente cliente1 = new Cliente();
        
         cliente1.fecha_nacimiento = (String) "1990-05-15";
         cliente1.ci = "1234567890";
@@ -34,7 +34,7 @@ public class ClienteSeeder {
         cliente3.fecha_nacimiento = (String) "1995-07-30";
         cliente3.ci = "1122334455";
         cliente3.id_usuario = 5;
-        cliente3 = clienteService.create(cliente3);
+        cliente3 = clienteService.create(cliente3); */
     }
     
 

@@ -1,8 +1,11 @@
 package org.barberia.usuarios.service;
 
 import java.util.List;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 
 import org.barberia.usuarios.domain.Horario;
+import org.barberia.usuarios.domain.enums.DiaSemana;
 import org.barberia.usuarios.mapper.HorarioMapper;
 import org.barberia.usuarios.repository.HorarioRepository;
 import org.barberia.usuarios.validation.HorarioValidator;
@@ -24,12 +27,24 @@ public class HorarioService {
         return repo.findById(id).map(HorarioMapper::obtenerUnoTable).orElse("No se encontró horario con id=" + id);
     }
 
-    public Horario create(Horario h) {
+    public Horario create(String dia_semana, String hora_inicio, String hora_fin, Integer id_barbero) {
+        // Normalizar y convertir la entrada al enum de forma tolerante
+        DiaSemana dia = DiaSemana.parse(dia_semana);
+        Horario h = new Horario();
+        // asignar enum y parsear las horas a LocalTime
+        h.dia_semana = dia;
+        try {
+            h.hora_inicio = LocalTime.parse(hora_inicio);
+            h.hora_fin = LocalTime.parse(hora_fin);
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("Formato de hora inválido. Use HH:mm, por ejemplo '09:30'");
+        }
+        h.id_barbero = id_barbero;
         validator.validar(h);
         List<Horario> horarios = repo.findAll();
         for (Horario horarioExistente : horarios) {
             if (horarioExistente.id_barbero.equals(h.id_barbero) &&
-                horarioExistente.dia_semana == h.dia_semana) {
+                horarioExistente.dia_semana.equals(h.dia_semana)) {
                 // Verificar si hay solapamiento de horarios
                 if (horariosSeSuperponen(horarioExistente, h)) {
                     throw new IllegalArgumentException(
@@ -52,7 +67,7 @@ public class HorarioService {
         for (Horario horarioExistente : horarios) {
             if (!horarioExistente.id_horario.equals(id) &&
                 horarioExistente.id_barbero.equals(h.id_barbero) &&
-                horarioExistente.dia_semana == h.dia_semana) {
+                horarioExistente.dia_semana.equals(h.dia_semana)) {
                 if (horariosSeSuperponen(horarioExistente, h)) {
                     throw new IllegalArgumentException(
                         String.format("El horario actualizado se solapa con un horario existente en %s de %s a %s.",
@@ -64,8 +79,10 @@ public class HorarioService {
         return repo.save(h);
     }
 
-    public void delete(Integer id) {
+    public String delete(Integer id) {
         repo.deleteById(id);
+        return "Horario con id=" + id + " eliminado " +
+                "\n" + getByIdAsTable(id);
     }
     
     /**

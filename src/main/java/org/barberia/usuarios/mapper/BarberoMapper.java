@@ -30,12 +30,41 @@ public class BarberoMapper {
           .append("┼").append("─".repeat(updatedW))
           .append("┤\n");
 
-        for (Barbero b : items) {
-            String esp=t(b.especialidad,espW), foto=t(b.foto_perfil,fotoW), est=t(b.estado!=null?b.estado.name():"",estW);
-            String cr=b.created_at!=null?b.created_at.toString():"";
-            String up=b.updated_at!=null?b.updated_at.toString():"";
-            sb.append(String.format("│%-"+idW+"s│%-"+usrW+"s│%-"+espW+"s│%-"+fotoW+"s│%-"+estW+"s│%-"+createdW+"s│%-"+updatedW+"s│\n",
-                    b.id_barbero, b.id_usuario, esp, foto, est, cr, up));
+        for (int idx = 0; idx < items.size(); idx++) {
+            Barbero b = items.get(idx);
+            List<String> espLines = wrap(b.especialidad, espW);
+            List<String> fotoLines = wrap(b.foto_perfil, fotoW);
+            List<String> estLines = wrap(b.estado!=null?b.estado.name():"", estW);
+            List<String> crLines = wrap(b.created_at!=null?b.created_at.toString():"", createdW);
+            List<String> upLines = wrap(b.updated_at!=null?b.updated_at.toString():"", updatedW);
+            
+            int maxLines = Math.max(espLines.size(), Math.max(fotoLines.size(), 
+                          Math.max(estLines.size(), Math.max(crLines.size(), upLines.size()))));
+            
+            for (int i = 0; i < maxLines; i++) {
+                String id = i == 0 ? String.valueOf(b.id_barbero) : "";
+                String usr = i == 0 ? String.valueOf(b.id_usuario) : "";
+                
+                sb.append(String.format("│%-"+idW+"s│%-"+usrW+"s│%-"+espW+"s│%-"+fotoW+"s│%-"+estW+"s│%-"+createdW+"s│%-"+updatedW+"s│\n",
+                        id, usr,
+                        getLine(espLines, i, espW),
+                        getLine(fotoLines, i, fotoW),
+                        getLine(estLines, i, estW),
+                        getLine(crLines, i, createdW),
+                        getLine(upLines, i, updatedW)));
+            }
+            
+            // Línea divisoria entre registros (solo si no es el último)
+            if (idx < items.size() - 1) {
+                sb.append("├").append("─".repeat(idW))
+                        .append("┼").append("─".repeat(usrW))
+                        .append("┼").append("─".repeat(espW))
+                        .append("┼").append("─".repeat(fotoW))
+                        .append("┼").append("─".repeat(estW))
+                        .append("┼").append("─".repeat(createdW))
+                        .append("┼").append("─".repeat(updatedW))
+                        .append("┤\n");
+            }
         }
 
         sb.append("└").append("─".repeat(idW))
@@ -51,5 +80,27 @@ public class BarberoMapper {
 
     public static String obtenerUnoTable(Barbero b){ return obtenerTodosTable(java.util.List.of(b)); }
 
-    private static String t(String s,int w){ if(s==null)return""; if(s.length()<=w)return s; if(w<=3)return s.substring(0,Math.max(0,w)); return s.substring(0,w-3)+"..."; }
+    private static List<String> wrap(String text, int width) {
+        List<String> lines = new java.util.ArrayList<>();
+        if (text == null || text.isEmpty()) {
+            lines.add("");
+            return lines;
+        }
+        
+        int start = 0;
+        while (start < text.length()) {
+            int end = Math.min(start + width, text.length());
+            lines.add(text.substring(start, end));
+            start = end;
+        }
+        return lines;
+    }
+    
+    private static String getLine(List<String> lines, int index, int width) {
+        if (index < lines.size()) {
+            String line = lines.get(index);
+            return String.format("%-" + width + "s", line);
+        }
+        return " ".repeat(width);
+    }
 }

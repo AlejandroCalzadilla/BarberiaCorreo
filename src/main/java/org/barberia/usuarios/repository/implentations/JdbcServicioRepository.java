@@ -13,7 +13,7 @@ import java.util.Optional;
 public class JdbcServicioRepository implements ServicioRepository {
     @Override
     public List<Servicio> findAll() {
-        String sql = "SELECT id_servicio, id_categoria, nombre, descripcion, duracion_minutos_aprox, precio, estado, imagen, created_at, updated_at FROM servicio ORDER BY id_servicio";
+        String sql = "SELECT id_servicio, nombre, descripcion, duracion_minutos_aprox, precio, estado, imagen, created_at, updated_at FROM servicio ORDER BY id_servicio";
         List<Servicio> list = new ArrayList<>();
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) list.add(mapRow(rs));
@@ -23,7 +23,7 @@ public class JdbcServicioRepository implements ServicioRepository {
 
     @Override
     public Optional<Servicio> findById(Integer id) {
-        String sql = "SELECT id_servicio, id_categoria, nombre, descripcion, duracion_minutos_aprox, precio, estado, imagen, created_at, updated_at FROM servicio WHERE id_servicio=?";
+        String sql = "SELECT id_servicio, nombre, descripcion, duracion_minutos_aprox, precio, estado, imagen, created_at, updated_at FROM servicio WHERE id_servicio=?";
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) { if (rs.next()) return Optional.of(mapRow(rs)); }
@@ -61,7 +61,7 @@ public class JdbcServicioRepository implements ServicioRepository {
     }
 
     private Servicio update(Servicio s) {
-        String sql = "UPDATE servicio SET id_categoria=?, nombre=?, descripcion=?, duracion_minutos_aprox=?, precio=?, estado=?::estado_item, imagen=?, updated_at=now() WHERE id_servicio=? RETURNING created_at, updated_at";
+        String sql = "UPDATE servicio SET nombre=?, descripcion=?, duracion_minutos_aprox=?, precio=?, estado=?::estado_item, imagen=?, updated_at=now() WHERE id_servicio=? RETURNING created_at, updated_at";
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
            
             ps.setString(1, s.nombre);

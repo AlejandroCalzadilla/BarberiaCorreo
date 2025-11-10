@@ -1,17 +1,27 @@
 package org.barberia.usuarios.service;
 
 import org.barberia.usuarios.domain.Pago;
+import org.barberia.usuarios.domain.enums.EstadoPago;
+import org.barberia.usuarios.domain.enums.TipoPago;
 import org.barberia.usuarios.mapper.PagoMapper;
 import org.barberia.usuarios.repository.PagoRepository;
+import org.barberia.usuarios.repository.ReservaRepository;
 import org.barberia.usuarios.validation.PagoValidator;
 
 public class PagoService {
     private final PagoRepository repo;
     private final PagoValidator validator;
+    private final ReservaRepository reservaRepo;
 
-    public PagoService(PagoRepository repo, PagoValidator validator) {
+    public PagoService(
+            PagoRepository repo,
+            PagoValidator validator,
+            ReservaRepository reservaRepo)
+
+    {
         this.repo = repo;
         this.validator = validator;
+        this.reservaRepo = reservaRepo;
     }
 
     public String getAllAsTable() {
@@ -22,18 +32,28 @@ public class PagoService {
         return repo.findById(id).map(PagoMapper::obtenerUnoTable).orElse("No se encontró pago con id=" + id);
     }
 
-    public Pago create(Pago p) {
+    public Pago createReserva(Pago p, Integer reservaId) {
+        reservaRepo.findById(reservaId).orElseThrow(() -> new IllegalArgumentException("Reserva no encontrada"));
+        p.estado = EstadoPago.pagado;
+        p.tipo_pago = TipoPago.pago_final;
         validator.validar(p);
+        p.id_reserva = reservaId;
         return repo.save(p);
     }
 
-    public Pago update(Integer id, Pago p) {
+   
+
+    public Pago updateReserva(Pago p, Integer reservaId) {
+        reservaRepo.findById(reservaId).orElseThrow(() -> new IllegalArgumentException("Reserva no encontrada"));
+        p.estado = EstadoPago.pagado;
+        p.tipo_pago = TipoPago.pago_final;
         validator.validar(p);
-        p.id_pago = id;
+        p.id_reserva = reservaId;
         return repo.save(p);
     }
 
     public void delete(Integer id) {
+       
         repo.deleteById(id);
     }
 }

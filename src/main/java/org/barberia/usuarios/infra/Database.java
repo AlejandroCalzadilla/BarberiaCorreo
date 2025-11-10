@@ -6,9 +6,16 @@ import java.sql.SQLException;
 
 public class Database {
     public static Connection getConnection() throws SQLException {
-        String url = env("DB_URL", "jdbc:postgresql://localhost:5432/barberia");
-        String user = env("DB_USER", "postgres");
-        String pass = env("DB_PASSWORD", "ale12345678");
+        /*
+         * String url = env("DB_URL", "jdbc:postgresql://localhost:5432/barberia");
+         * String user = env("DB_USER", "postgres");
+         * String pass = env("DB_PASSWORD", "ale12345678");
+         */
+
+        String url = "jdbc:postgresql://localhost:5432/barberia";
+        String user = "postgres";
+        String pass = "ale12345678";
+
         return DriverManager.getConnection(url, user, pass);
     }
 

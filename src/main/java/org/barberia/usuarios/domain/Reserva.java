@@ -18,10 +18,9 @@ public class Reserva {
     public EstadoReserva estado;
     public BigDecimal total;
     public String notas;
-    public LocalDateTime fecha_creacion;
     public BigDecimal precio_servicio;
     public BigDecimal monto_anticipo;
-    public java.math.BigDecimal porcentaje_anticipo;
+    
     public LocalDateTime created_at;
     public LocalDateTime updated_at;
 }

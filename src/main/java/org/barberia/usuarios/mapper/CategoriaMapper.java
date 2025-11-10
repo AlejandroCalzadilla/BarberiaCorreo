@@ -19,7 +19,7 @@ public class CategoriaMapper {
           .append("┐\n");
 
         sb.append(String.format("│%-"+idW+"s│%-"+nombreW+"s│%-"+descW+"s│%-"+estadoW+"s│%-"+createdW+"s│%-"+updatedW+"s│\n",
-                "ID_CATEGORIA", "Nombre", "Descripcion", "Estado", "Creado", "Actualizado"));
+                "ID_CATEG.", "Nombre", "Descripcion", "Estado", "Creado", "Actualizado"));
 
         sb.append("├").append("─".repeat(idW))
           .append("┼").append("─".repeat(nombreW))
@@ -29,14 +29,39 @@ public class CategoriaMapper {
           .append("┼").append("─".repeat(updatedW))
           .append("┤\n");
 
-        for (Categoria c : categorias) {
-            String nombre = t(c.nombre, nombreW);
-            String desc = t(c.descripcion, descW);
-            String estado = t(c.estado != null ? c.estado.name() : "", estadoW);
-            String created = t(c.created_at != null ? c.created_at.toString() : "", createdW);
-            String updated = t(c.updated_at != null ? c.updated_at.toString() : "", updatedW);
-            sb.append(String.format("│%-"+idW+"s│%-"+nombreW+"s│%-"+descW+"s│%-"+estadoW+"s│%-"+createdW+"s│%-"+updatedW+"s│\n",
-                    c.id_categoria, nombre, desc, estado, created, updated));
+        for (int idx = 0; idx < categorias.size(); idx++) {
+            Categoria c = categorias.get(idx);
+            List<String> nombreLines = wrap(c.nombre, nombreW);
+            List<String> descLines = wrap(c.descripcion, descW);
+            List<String> estadoLines = wrap(c.estado != null ? c.estado.name() : "", estadoW);
+            List<String> createdLines = wrap(c.created_at != null ? c.created_at.toString() : "", createdW);
+            List<String> updatedLines = wrap(c.updated_at != null ? c.updated_at.toString() : "", updatedW);
+            
+            int maxLines = Math.max(nombreLines.size(), Math.max(descLines.size(), 
+                          Math.max(estadoLines.size(), Math.max(createdLines.size(), updatedLines.size()))));
+            
+            for (int i = 0; i < maxLines; i++) {
+                String id = i == 0 ? String.valueOf(c.id_categoria) : "";
+                
+                sb.append(String.format("│%-"+idW+"s│%-"+nombreW+"s│%-"+descW+"s│%-"+estadoW+"s│%-"+createdW+"s│%-"+updatedW+"s│\n",
+                        id,
+                        getLine(nombreLines, i, nombreW),
+                        getLine(descLines, i, descW),
+                        getLine(estadoLines, i, estadoW),
+                        getLine(createdLines, i, createdW),
+                        getLine(updatedLines, i, updatedW)));
+            }
+            
+            // Línea divisoria entre registros (solo si no es el último)
+            if (idx < categorias.size() - 1) {
+                sb.append("├").append("─".repeat(idW))
+                        .append("┼").append("─".repeat(nombreW))
+                        .append("┼").append("─".repeat(descW))
+                        .append("┼").append("─".repeat(estadoW))
+                        .append("┼").append("─".repeat(createdW))
+                        .append("┼").append("─".repeat(updatedW))
+                        .append("┤\n");
+            }
         }
 
         sb.append("└").append("─".repeat(idW))
@@ -53,10 +78,27 @@ public class CategoriaMapper {
         return obtenerTodosTable(java.util.List.of(c));
     }
 
-    private static String t(String s, int w) {
-        if (s == null) return "";
-        if (s.length() <= w) return s;
-        if (w <= 3) return s.substring(0, Math.max(0, w));
-        return s.substring(0, w-3) + "...";
+    private static List<String> wrap(String text, int width) {
+        List<String> lines = new java.util.ArrayList<>();
+        if (text == null || text.isEmpty()) {
+            lines.add("");
+            return lines;
+        }
+        
+        int start = 0;
+        while (start < text.length()) {
+            int end = Math.min(start + width, text.length());
+            lines.add(text.substring(start, end));
+            start = end;
+        }
+        return lines;
+    }
+    
+    private static String getLine(List<String> lines, int index, int width) {
+        if (index < lines.size()) {
+            String line = lines.get(index);
+            return String.format("%-" + width + "s", line);
+        }
+        return " ".repeat(width);
     }
 }

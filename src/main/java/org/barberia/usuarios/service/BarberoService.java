@@ -2,6 +2,7 @@ package org.barberia.usuarios.service;
 
 import org.barberia.usuarios.domain.Barbero;
 import org.barberia.usuarios.domain.Usuario;
+import org.barberia.usuarios.domain.enums.EstadoBarbero;
 import org.barberia.usuarios.domain.enums.EstadoUsuario;
 import org.barberia.usuarios.mapper.BarberoMapper;
 import org.barberia.usuarios.repository.BarberoRepository;
@@ -30,7 +31,12 @@ public class BarberoService {
         return repo.findById(id).map(BarberoMapper::obtenerUnoTable).orElse("No se encontró barbero con id=" + id);
     }
 
-    public Barbero create(Barbero b) {
+    public Barbero create(int id_usuario, String especialidad, String foto_perfil) {
+        Barbero b = new Barbero();
+        b.especialidad = especialidad;
+        b.foto_perfil = foto_perfil;
+        b.id_usuario = id_usuario;
+        b.estado = EstadoBarbero.disponible;
         validator.validar(b);
         Optional<Usuario> u = usuarioRepo.findById(b.id_usuario);
         if (u.isEmpty()) {
@@ -61,7 +67,9 @@ public class BarberoService {
         return repo.save(b);
     }
 
-    public void delete(Integer id) {
+    public String delete(Integer id) {
         repo.deleteById(id);
+        return "Servicio con id=" + id + " eliminado (soft delete)" +
+                "\n" + getByIdAsTable(id);
     }
 }

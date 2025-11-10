@@ -30,8 +30,12 @@ public class ClienteService {
         return repo.findById(id).map(ClienteMapper::obtenerUnoTable).orElse("No se encontró cliente con id=" + id);
     }
 
-    public Cliente create(Cliente c) {
-        Optional<Usuario> u = usuarioRepo.findById(c.id_cliente);
+    public Cliente create( Integer id_usuario, String fecha_nacimiento, String ci) {
+        Cliente c = new Cliente();
+        c.id_usuario = id_usuario;
+        c.fecha_nacimiento = fecha_nacimiento;
+        c.ci = ci;
+        Optional<Usuario> u = usuarioRepo.findById(c.id_usuario);
         if (u.isEmpty()) {
             throw new IllegalArgumentException("Usuario no encontrado");
         }
@@ -61,7 +65,9 @@ public class ClienteService {
         return repo.save(c);
     }
 
-    public void delete(Integer id) {
+    public String delete(Integer id) {
         repo.deleteById(id);
+        return "Cliente con id=" + id + " eliminado (soft delete)" +
+                "\n" + getByIdAsTable(id);
     }
 }

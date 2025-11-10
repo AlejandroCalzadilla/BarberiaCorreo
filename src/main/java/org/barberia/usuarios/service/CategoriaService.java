@@ -31,14 +31,20 @@ public class CategoriaService {
                 .orElse("No se encontró categoria con id=" + id);
     }
 
-    public Categoria create(Categoria c) {
+    public Categoria create(String nombre, String descripcion) {
+        Categoria c = new Categoria();
+        c.nombre = nombre;
+        c.descripcion = descripcion;
         validator.validar(c);
         return repo.save(c);
     }
 
-    public String  update(Integer id, Categoria c) {
-        validator.validar(c);
+    public String  update(Integer id, String nombre, String descripcion) {
+        Categoria c = new Categoria();
         c.id_categoria = id;
+        c.nombre = nombre;
+        c.descripcion = descripcion;
+        validator.validar(c);
         return "categoria actualizada: " + repo.save(c).toString();
     }
 
@@ -46,7 +52,9 @@ public class CategoriaService {
        return " categoria ahora es :  " + repo.softDeleteById(id);
     }
 
-    public void deleteById(Integer id) {
+    public String  deleteById(Integer id) {
         repo.deleteById(id);
+        return "Categoria con id=" + id + " eliminada (soft delete) " +
+                "\n" + getByIdAsTable(id);
     }
 }

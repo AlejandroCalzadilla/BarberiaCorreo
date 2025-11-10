@@ -1,85 +1,85 @@
 package org.barberia.usuarios;
 
-import org.barberia.usuarios.service.BarberoService;
-import org.barberia.usuarios.service.CategoriaService;
-import org.barberia.usuarios.service.ClienteService;
-import org.barberia.usuarios.service.HorarioService;
-import org.barberia.usuarios.service.ProductoService;
-import org.barberia.usuarios.service.ServicioService;
-import org.barberia.usuarios.service.UsuarioService;
-import org.barberia.usuarios.validation.BarberoValidator;
-import org.barberia.usuarios.validation.CategoriaValidator;
-import org.barberia.usuarios.validation.ClienteValidator;
-import org.barberia.usuarios.validation.HorarioValidator;
-import org.barberia.usuarios.validation.ProductoValidator;
-import org.barberia.usuarios.validation.ServicioValidator;
-import org.barberia.usuarios.validation.UsuarioValidator;
+import org.barberia.usuarios.service.*;
+import org.barberia.usuarios.servicioemail.CommandHelp;
+import org.barberia.usuarios.validation.*;
 import org.barberia.usuarios.repository.implentations.*;
 import org.barberia.usuarios.seeders.DbSeeder;
-
 import java.math.BigDecimal;
 import java.time.LocalTime;
-import org.barberia.usuarios.domain.Barbero;
 import org.barberia.usuarios.domain.Categoria;
-import org.barberia.usuarios.domain.Cliente;
 import org.barberia.usuarios.domain.Horario;
+import org.barberia.usuarios.domain.Pago;
 import org.barberia.usuarios.domain.Producto;
+import org.barberia.usuarios.domain.Reserva;
 import org.barberia.usuarios.domain.Servicio;
+import org.barberia.usuarios.domain.ServicioProducto;
 import org.barberia.usuarios.domain.Usuario;
 import org.barberia.usuarios.domain.enums.DiaSemana;
-import org.barberia.usuarios.domain.enums.EstadoBarbero;
 import org.barberia.usuarios.domain.enums.EstadoHorario;
 import org.barberia.usuarios.domain.enums.EstadoItem;
+import org.barberia.usuarios.domain.enums.EstadoReserva;
+import org.barberia.usuarios.domain.enums.MetodoPago;
+import org.barberia.usuarios.domain.enums.TipoPago;
 import org.barberia.usuarios.repository.*;
 
 public class Application {
   public static void main(String[] args) {
 
     CategoriaRepository categoriaRepository = new JdbcCategoriaRepository();
-    CategoriaValidator categoriaValidator = new CategoriaValidator();
-    CategoriaService categoriaService = new CategoriaService(categoriaRepository, categoriaValidator);
-
     ProductoRepository productoRepository = new JdbcProductoRepository();
-
-    ProductoValidator productoValidator = new ProductoValidator();
-    ProductoService productoService = new ProductoService(productoRepository, categoriaRepository, productoValidator);
-
-     UsuarioRepository usuarioRepository = new JdbcUsuarioRepository();
-    UsuarioValidator usuarioValidator = new UsuarioValidator();
-    UsuarioService usuarioService = new UsuarioService(usuarioRepository, usuarioValidator);
-
+    UsuarioRepository usuarioRepository = new JdbcUsuarioRepository();
     BarberoRepository barberoRepository = new JdbcBarberoRepository();
-    BarberoValidator barberoValidator = new BarberoValidator();
-    BarberoService barberoService = new BarberoService(barberoRepository, usuarioRepository, barberoValidator);
-
-   
-    ClienteRepository clienteRepository = new JdbcClienteRepository();
-    ClienteValidator clienteValidator = new ClienteValidator();
-    ClienteService clienteService = new ClienteService(clienteRepository, usuarioRepository, clienteValidator);
-
-
-
     HorarioRepository horarioRepository = new JdbcHorarioRepository();
-    HorarioValidator horarioValidator = new HorarioValidator();
-    HorarioService horarioService = new HorarioService(horarioRepository, horarioValidator);
-    
     ServicioRepository servicioRepository = new JdbcServicioRepository();
-    ServicioValidator servicioValidator = new ServicioValidator();
-    ServicioService  servicioService = new ServicioService(servicioRepository,servicioValidator);
+    ReservaRepository reservaRepository = new JdbcReservaRepository();
+    ClienteRepository clienteRepository = new JdbcClienteRepository();
+    PagoRepository pagoRepository = new JdbcPagoRepository();
+    ServicioProductoRepository servicioProductoRepository = new JdbServicioProductoRepository();
 
+    ClienteValidator clienteValidator = new ClienteValidator();
+    CategoriaValidator categoriaValidator = new CategoriaValidator();
+    ProductoValidator productoValidator = new ProductoValidator();
+    UsuarioValidator usuarioValidator = new UsuarioValidator();
+    BarberoValidator barberoValidator = new BarberoValidator();
+    ServicioValidator servicioValidator = new ServicioValidator();
+    HorarioValidator horarioValidator = new HorarioValidator();
+    ReservaValidator reservaValidator = new ReservaValidator();
+    PagoValidator pagoValidator = new PagoValidator();
+    ServicioProductoValidator servicioProductoValidator = new ServicioProductoValidator();
+
+    CategoriaService categoriaService = new CategoriaService(categoriaRepository, categoriaValidator);
+    ProductoService productoService = new ProductoService(productoRepository, categoriaRepository, productoValidator);
+    UsuarioService usuarioService = new UsuarioService(usuarioRepository, usuarioValidator);
+    BarberoService barberoService = new BarberoService(barberoRepository, usuarioRepository, barberoValidator);
+    ClienteService clienteService = new ClienteService(clienteRepository, usuarioRepository, clienteValidator);
+    HorarioService horarioService = new HorarioService(horarioRepository, horarioValidator);
+    ServicioService servicioService = new ServicioService(servicioRepository, servicioValidator);
+    ServicioProductoService servicioProductoService = new ServicioProductoService(servicioProductoRepository,
+        servicioProductoValidator);
+    PagoService pagoService = new PagoService(pagoRepository, pagoValidator, reservaRepository);
+    ReservaService reservaService = new ReservaService(reservaRepository, reservaValidator, pagoRepository,
+        servicioProductoRepository, productoRepository, servicioRepository);
+    CommandHelp commandHelp = new CommandHelp();
 
     DbSeeder dbSeeder = new DbSeeder(
         categoriaService,
         null,
         null,
         null,
-        null);
+        null,
+        productoRepository);
     try {
 
+      /* CATEGORIA CRUD */
       Categoria categoria = new Categoria();
       categoria.nombre = "Cuidado del Cabello";
       categoria.descripcion = "Actualizado Productos para el cuidado y estilo del cabello.";
+      categoriaService.create(categoria.nombre, categoria.descripcion);
+      categoriaService.update(1, "Cuidado del Cabello2", "Actualizado cuidado del cabello");
+      categoriaService.deleteById(1);
 
+      /* PRODUCTO CRUD */
       Producto producto = new Producto();
       producto.nombre = "Gel para el cabello";
       producto.codigo = "GEL123";
@@ -91,7 +91,36 @@ public class Application {
       producto.unidad_medida = "unidad";
       producto.estado = producto.estado.activo;
       producto.id_categoria = 4;
+      productoService.create(
+          1,
+          "P0005",
+          "gel para cabello",
+          "dabsdjagsjhdvgasd",
+          producto.precio_compra,
+          producto.precio_venta,
+          10,
+          2,
+          "frasco",
+          "dasdsd");
 
+      productoService.update(
+          1,
+          "dsadasds",
+          "dasdsadsa",
+          "adasdas",
+          producto.precio_compra,
+          producto.precio_venta,
+          10,
+          9,
+          "frasco",
+          "dasdsadsa");
+      productoService.delete(1);
+
+
+
+      /* USUARIO CRUD */
+      usuarioService.getAllAsTable();
+      usuarioService.getByIdAsTable(1);
       Usuario usuario = new Usuario();
       usuario.nombre = "Carlos  ";
       usuario.apellido = "Perez";
@@ -100,88 +129,114 @@ public class Application {
       usuario.email = "carlos.perez@example.com";
       usuario.password = "password";
       usuario.username = "carlosperez";
+      usuarioService.create(
+          "alejandro",
+          "calzadilla",
+          "ale@gmail.com",
+          "79803692",
+          "calle falsa 123",
+          "alecalsre",
+          "password");
 
-      Usuario usuario2 = new Usuario();
-      usuario2.nombre = "Ana Gomez";
-      usuario2.apellido = "Martinez";
-      usuario2.telefono = "555-5678";
-      usuario2.direccion = "Avenida Siempre Viva 742";
-      usuario2.email = "ana.gomez@example.com";
-      usuario2.password = "securepassword";
-      usuario2.username = "anagomez";
+      usuarioService.update(
+        1,
+        "alejandro",
+        "calzadilla nogales",
+        "ale@gamil.com",
+        "79803692",
+        "calle falsa 123",
+        "juaniss",
+        "password");    
 
 
+
+
+      /* HORARIO CRUD */
+      
       System.out.println(barberoService.getAllAsTable());
-     Horario horario = new Horario();
+      System.out.println(horarioService.getAllAsTable());   
+      System.out.println(horarioService.getByIdAsTable(1));
+      Horario horario = new Horario();
       horario.dia_semana = DiaSemana.martes;
       horario.estado = EstadoHorario.activo;
       horario.hora_inicio = LocalTime.of(22, 0);
       horario.hora_fin = LocalTime.of(23, 0);
       horario.id_barbero = 1;
-     // Horario horario2 = horarioService.create(horario);
-     // System.out.println("Horario creado: " + horario2.toString());
-      System.out.println(horarioService.getAllAsTable());
- 
+     /*  Horario horario2 = horarioService.create(horario);
+      System.out.println("Horario creado: " + horario2.toString());
+      System.out.println(horarioService.getAllAsTable()); */
 
-
-      Servicio servicio = new Servicio();
-      servicio.descripcion="Corte de cabello ";
-      servicio.duracion_minutos_aprox= 90;
-      servicio.estado =EstadoItem.activo;
-      servicio.nombre = "corte de cabello";
-      servicio.precio= BigDecimal.valueOf(50.00);
-      servicio.imagen= "sdvashfd";
+      /* SERVICIO CRUD */
       
+        Servicio servicio = new Servicio();
+        servicio.descripcion="Corte de cabello ";
+        servicio.duracion_minutos_aprox= 90;
+        servicio.estado =EstadoItem.activo;
+        servicio.nombre = "corte de cabello";
+        servicio.precio= BigDecimal.valueOf(50.00);
+        servicio.imagen= "sdvashfd";
+        servicioService.create(
+            servicio.nombre,
+            servicio.descripcion,
+            servicio.duracion_minutos_aprox,
+            servicio.precio,
+            servicio.imagen);
+      servicioService.update(
+        1, 
+        "dasdsadsads",
+        "ddasdsad",
+        5,
+        servicio.precio, "dadsdsa"); 
+       servicioService.delete(1);
 
-      Servicio servicio2 = servicioService.create(servicio);
 
 
- 
+     /**RESERVA CRUD  */
+      Reserva reserva = new Reserva();
+      reserva.fecha_reserva = java.time.LocalDate.parse("2024-10-15");
+      reserva.hora_inicio = java.time.LocalTime.parse("10:00:00");
+      reserva.hora_fin = java.time.LocalTime.parse("11:30:00");
+      reserva.id_barbero = 1;
+      reserva.id_cliente = 1;
+      reserva.id_servicio = 1;
+      reserva.estado = EstadoReserva.confirmada;
+      reserva.total = BigDecimal.valueOf(50.00);
+      reserva.notas = "Por favor, ser puntual.";
+      reserva.precio_servicio = BigDecimal.valueOf(50.00);
+      reserva.monto_anticipo = BigDecimal.valueOf(10.00);
+     // reserva.porcentaje_anticipo = BigDecimal.valueOf(20.00);
 
-     //System.out.println(productoService.getAllAsTable());
-    
 
-      /* String usuarioCreado = usuarioService.update(1,
-          usuario.nombre,
-          usuario.apellido,
-          usuario.email,
-          usuario.telefono,
-          usuario.direccion,
-          usuario.username,
-          usuario.password); */
-      // System.out.println(usuarioService.activate(2));
-          //System.out.println(usuarioCreado);
-     // System.out.println(usuarioService.getAllAsTable());
-      Barbero barbero = new Barbero();
-      barbero.especialidad = "Cortes Modernos";
-      barbero.estado = EstadoBarbero.disponible;
-      barbero.foto_perfil = "http://example.com/perfil.jpg";
-      barbero.id_usuario = 1;
-      // Barbero barbero2= barberoService.create(barbero);
-      // System.out.println(barbero2.toString());
+      /* PAG CRUD */
+      Pago pago = new Pago();
+      pago.monto_total = BigDecimal.valueOf(10.00);
+      pago.metodo_pago = MetodoPago.efectivo;
+      pago.tipo_pago = TipoPago.anticipo;
+      pago.notas = "Anticipo para reserva de corte de cabello.";
 
-      Cliente cliente = new Cliente();
-      cliente.fecha_nacimiento = "1990-05-15";
-      cliente.ci = "8942008SC";
-      cliente.id_usuario = 2;
-      //Cliente cliente2= clienteService.create(cliente);
-     //  System.out.println(cliente2.toString());
-    //  System.out.println(cliente); 
-     // System.out.println(usuarioService.getAllAsTable());
-       
-      // Producto productoCreado = productoService.create(producto);
-      // System.out.println("Producto creado: " + productoCreado.toString());
+      ServicioProducto servicioProducto = new ServicioProducto();
+      servicioProducto.id_servicio = 1;
+      servicioProducto.id_producto = 1;
+      servicioProducto.cantidad = 2;
+      // servicioProducto.subtotal = BigDecimal.valueOf(100.00);
+
+      // servicioProductoService.delete(1,1);
+      // System.out.println(servicioProductoService.getAllAsTable());
+
+      // System.out.println(usuarioService.getAllAsTable());
+      // System.out.println(clienteService.getAllAsTable());
+      // System.out.println(barberoService.getAllAsTable());
       // System.out.println(productoService.getAllAsTable());
-      // String message = categoriaService.update(1, categoria);
-      // System.out.println(message);
-      // String message= categoriaService.softDeleteById(4);
-      // System.out.println(message);
-      // dbSeeder.seed();
-      // dbSeeder.rollback();
+      // System.out.println(categoriaService.getAllAsTable());
+      // System.out.println(servicioService.getAllAsTable());
+      // System.out.println(horarioService.getAllAsTable());
+      // System.out.println(pagoService.getAllAsTable());
+      // System.out.println(horarioService.getAllAsTable());
+
     } catch (Exception e) {
       System.out.println("Error : " + e.getMessage());
     }
     System.out.println("Seeding completed.");
-    System.out.println(categoriaService.getAllAsTable());
+    // System.out.println(categoriaService.getAllAsTable());
   }
 }
