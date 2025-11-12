@@ -12,4 +12,5 @@ public interface CategoriaRepository {
     void deleteById(Integer id);
 
     String softDeleteById(Integer id);
+    void activateById(Integer id);
 }

@@ -67,9 +67,23 @@ public class UsuarioService {
 
     }
 
-    public String activate(Integer id) {
-        repo.activateById(id);
-        return "Usuario con id=" + id + " activado" +
-                "\n" + getByIdAsTable(id);
+    /**
+     * Alterna el estado de un usuario: si está activo lo desactiva (soft delete),
+     * y si está desactivado lo activa.
+     * @param id id del usuario
+     * @return mensaje con el resultado y la representación en tabla
+     */
+    public String toggleActive(Integer id) {
+        return repo.findById(id)
+            .map(u -> {
+                if (u.estado == EstadoUsuario.activo) {
+                    repo.softDeleteById(id);
+                    return "Usuario con id=" + id + " desactivado (soft delete)" + "\n" + getByIdAsTable(id);
+                } else {
+                    repo.activateById(id);
+                    return "Usuario con id=" + id + " activado" + "\n" + getByIdAsTable(id);
+                }
+            })
+            .orElse("No se encontró usuario con id=" + id);
     }
 }

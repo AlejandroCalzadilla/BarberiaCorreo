@@ -14,4 +14,10 @@ public interface UsuarioRepository {
 
     void activateById(Integer id);
     void deleteById(Integer id);
+    
+    /**
+     * Obtiene usuarios que no están asociados a ningún barbero ni cliente.
+     * @return Lista de usuarios disponibles para asociar
+     */
+    List<Usuario> findAvailableUsuarios();
 }

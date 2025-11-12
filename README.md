@@ -18,7 +18,7 @@ src/main/java/org/barberia/usuarios/servicioemail/ServicioEmail.java
 ### Ejecución del Servicio
 
 Para iniciar el servicio de correo electrónico ejecute en su visual estudio code el main de servicio email , aga click en run:
-
+ en el correo enviar un mensaje a grupo11sa@tecnoweb.org.bo en el asunto van los comandos
 
 ![alt text](image.png)
 

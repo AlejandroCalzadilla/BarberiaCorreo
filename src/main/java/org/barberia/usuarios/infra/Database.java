@@ -11,6 +11,11 @@ public class Database {
         String url = "jdbc:postgresql://www.tecnoweb.org.bo:5432/db_grupo11sa";
         String user = "grupo11sa";
         String pass = "grup011grup011*";
+        
+         /*  String url = env("DB_URL", "jdbc:postgresql://localhost:5432/barberia");
+          String user = env("DB_USER", "postgres");
+         String pass = env("DB_PASSWORD", "ale12345678");
+         */
 
         return DriverManager.getConnection(url, user, pass);
     }

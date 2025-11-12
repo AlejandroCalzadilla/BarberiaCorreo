@@ -43,17 +43,19 @@ public class PagoService {
 
    
 
-    public Pago updateReserva(Pago p, Integer reservaId) {
+    public String updateReserva(Pago p, Integer reservaId) {
         reservaRepo.findById(reservaId).orElseThrow(() -> new IllegalArgumentException("Reserva no encontrada"));
         p.estado = EstadoPago.pagado;
         p.tipo_pago = TipoPago.pago_final;
         validator.validar(p);
         p.id_reserva = reservaId;
-        return repo.save(p);
+        return "Pago actualizado con id=" + repo.save(p).id_pago;
+
     }
 
-    public void delete(Integer id) {
+    public String  delete(Integer id) {
        
         repo.deleteById(id);
+        return "Pago con id=" + id + " eliminado.";
     }
 }

@@ -2,6 +2,7 @@ package org.barberia.usuarios;
 
 import org.barberia.usuarios.service.*;
 import org.barberia.usuarios.servicioemail.CommandHelp;
+import org.barberia.usuarios.utils.ReporteEjemplos;
 import org.barberia.usuarios.validation.*;
 import org.barberia.usuarios.repository.implentations.*;
 import org.barberia.usuarios.seeders.DbSeeder;
@@ -62,22 +63,39 @@ public class Application {
         servicioProductoRepository, productoRepository, servicioRepository);
     CommandHelp commandHelp = new CommandHelp();
 
-    DbSeeder dbSeeder = new DbSeeder(
+    System.out.println(commandHelp.obtenerComandosDisponibles());
+
+     
+     DbSeeder dbSeeder = new DbSeeder(
+        usuarioService,
         categoriaService,
-        null,
-        null,
-        null,
-        null,
-        productoRepository);
-    try {
+        horarioService,
+        productoRepository,
+        categoriaRepository,
+        servicioRepository,
+        servicioProductoRepository,
+        reservaRepository,
+        pagoRepository,
+        clienteRepository,
+        barberoRepository,
+        usuarioRepository
+         
+        );
+ 
+       ReporteService reporteService = new ReporteService();  
+       // dbSeeder.seed();
+       ReporteEjemplos reporteEjemplos = new ReporteEjemplos(reporteService);
+
+       //System.out.println(reporteEjemplos.ejemploDashboardGeneral());
+       try {
 
       /* CATEGORIA CRUD */
       Categoria categoria = new Categoria();
       categoria.nombre = "Cuidado del Cabello";
       categoria.descripcion = "Actualizado Productos para el cuidado y estilo del cabello.";
-      categoriaService.create(categoria.nombre, categoria.descripcion);
+     /*  categoriaService.create(categoria.nombre, categoria.descripcion);
       categoriaService.update(1, "Cuidado del Cabello2", "Actualizado cuidado del cabello");
-      categoriaService.deleteById(1);
+      categoriaService.deleteById(1); */
 
       /* PRODUCTO CRUD */
       Producto producto = new Producto();
@@ -91,7 +109,7 @@ public class Application {
       producto.unidad_medida = "unidad";
       producto.estado = producto.estado.activo;
       producto.id_categoria = 4;
-      productoService.create(
+      /* productoService.create(
           1,
           "P0005",
           "gel para cabello",
@@ -101,9 +119,9 @@ public class Application {
           10,
           2,
           "frasco",
-          "dasdsd");
+          "dasdsd"); */
 
-      productoService.update(
+      /* productoService.update(
           1,
           "dsadasds",
           "dasdsadsa",
@@ -113,14 +131,14 @@ public class Application {
           10,
           9,
           "frasco",
-          "dasdsadsa");
-      productoService.delete(1);
+          "dasdsadsa"); */
+      //productoService.delete(1);
 
 
 
       /* USUARIO CRUD */
-      usuarioService.getAllAsTable();
-      usuarioService.getByIdAsTable(1);
+    /*   usuarioService.getAllAsTable();
+      usuarioService.getByIdAsTable(1); */
       Usuario usuario = new Usuario();
       usuario.nombre = "Carlos  ";
       usuario.apellido = "Perez";
@@ -129,16 +147,16 @@ public class Application {
       usuario.email = "carlos.perez@example.com";
       usuario.password = "password";
       usuario.username = "carlosperez";
-      usuarioService.create(
+    /*   usuarioService.create(
           "alejandro",
           "calzadilla",
           "ale@gmail.com",
           "79803692",
           "calle falsa 123",
           "alecalsre",
-          "password");
+          "password"); */
 
-      usuarioService.update(
+     /*  usuarioService.update(
         1,
         "alejandro",
         "calzadilla nogales",
@@ -146,16 +164,16 @@ public class Application {
         "79803692",
         "calle falsa 123",
         "juaniss",
-        "password");    
+        "password");   */  
 
 
 
 
       /* HORARIO CRUD */
       
-      System.out.println(barberoService.getAllAsTable());
+    /*   System.out.println(barberoService.getAllAsTable());
       System.out.println(horarioService.getAllAsTable());   
-      System.out.println(horarioService.getByIdAsTable(1));
+      System.out.println(horarioService.getByIdAsTable(1)); */
       Horario horario = new Horario();
       horario.dia_semana = DiaSemana.martes;
       horario.estado = EstadoHorario.activo;
@@ -175,19 +193,19 @@ public class Application {
         servicio.nombre = "corte de cabello";
         servicio.precio= BigDecimal.valueOf(50.00);
         servicio.imagen= "sdvashfd";
-        servicioService.create(
+        /* servicioService.create(
             servicio.nombre,
             servicio.descripcion,
             servicio.duracion_minutos_aprox,
             servicio.precio,
-            servicio.imagen);
-      servicioService.update(
+            servicio.imagen); */
+      /* servicioService.update(
         1, 
         "dasdsadsads",
         "ddasdsad",
         5,
         servicio.precio, "dadsdsa"); 
-       servicioService.delete(1);
+       servicioService.delete(1); */
 
 
 
@@ -232,7 +250,8 @@ public class Application {
       // System.out.println(horarioService.getAllAsTable());
       // System.out.println(pagoService.getAllAsTable());
       // System.out.println(horarioService.getAllAsTable());
-
+      //reservaService.getAllAsTable();
+     // System.out.println(reservaService.getAllAsTable());
     } catch (Exception e) {
       System.out.println("Error : " + e.getMessage());
     }

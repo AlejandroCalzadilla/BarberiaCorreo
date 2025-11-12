@@ -10,4 +10,6 @@ public interface ServicioRepository {
     Optional<Servicio> findById(Integer id);
     Servicio save(Servicio s);
     void deleteById(Integer id);
+    void softDeleteById(Integer id);
+    void activateById(Integer id);
 }

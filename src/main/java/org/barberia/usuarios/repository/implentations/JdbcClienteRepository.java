@@ -92,6 +92,7 @@ public class JdbcClienteRepository implements ClienteRepository {
             ps.executeUpdate();
         } catch (SQLException e) { throw new RuntimeException(e); }
     }
+    
 
     private Cliente mapRow(ResultSet rs) throws SQLException {
         Cliente c = new Cliente();

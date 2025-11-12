@@ -42,10 +42,10 @@ public class BarberoService {
         if (u.isEmpty()) {
             throw new IllegalArgumentException("Usuario no encontrado");
         }
-        if( repo.findByUsuarioId(b.id_usuario).isPresent()) {
+        if (repo.findByUsuarioId(b.id_usuario).isPresent()) {
             throw new IllegalArgumentException("El usuario ya está asociado a un barbero");
         }
-        if( u.get().estado != EstadoUsuario.activo) {
+        if (u.get().estado != EstadoUsuario.activo) {
             throw new IllegalArgumentException("El usuario debe estar activo para asociarse a un barbero");
         }
         return repo.save(b);
@@ -57,10 +57,10 @@ public class BarberoService {
         if (u.isEmpty()) {
             throw new IllegalArgumentException("Usuario no encontrado");
         }
-        if( repo.findByUsuarioId(b.id_usuario).isPresent()) {
+        if (repo.findByUsuarioId(b.id_usuario).isPresent()) {
             throw new IllegalArgumentException("El usuario ya está asociado a un barbero");
         }
-        if( u.get().estado != EstadoUsuario.activo) {
+        if (u.get().estado != EstadoUsuario.activo) {
             throw new IllegalArgumentException("El usuario debe estar activo para asociarse a un barbero");
         }
         b.id_barbero = id;
@@ -68,8 +68,24 @@ public class BarberoService {
     }
 
     public String delete(Integer id) {
-        repo.deleteById(id);
-        return "Servicio con id=" + id + " eliminado (soft delete)" +
-                "\n" + getByIdAsTable(id);
+        Optional<Barbero> barbero = repo.findById(id);
+        if (barbero.isPresent()) {
+            return usuarioRepo.findById(barbero.get().id_usuario)
+                    .map(u -> {
+                        if (u.estado == EstadoUsuario.activo) {
+                            usuarioRepo.deleteById(u.id);
+                            return "Barbero con id=" + id + " desactivado (soft delete)" + "\n" + getByIdAsTable(id);
+                        } else {
+                            usuarioRepo.activateById(u.id);
+                            return "Barber con id=" + id + " activado" + "\n" + getByIdAsTable(id);
+                        }
+                    })
+                    .orElse("No se encontró usuario con id=" + id);
+
+        }
+        else{
+                throw new IllegalArgumentException("no existe barbero con id "+id);
+         
+        }
     }
 }

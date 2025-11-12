@@ -20,7 +20,6 @@ public class Reserva {
     public String notas;
     public BigDecimal precio_servicio;
     public BigDecimal monto_anticipo;
-    
     public LocalDateTime created_at;
     public LocalDateTime updated_at;
 }

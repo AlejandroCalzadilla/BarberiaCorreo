@@ -128,6 +128,22 @@ public class JdbcCategoriaRepository implements CategoriaRepository {
         return null;
     }
 
+    @Override
+    public void activateById(Integer id) {
+        this.findById(id);
+        if (!this.findById(id).isPresent()) {
+            throw new RuntimeException("Categoria con id " + id + " no existe.");
+        }
+        String sql = "UPDATE categoria SET estado='activa'::estado_categoria, updated_at=now() WHERE id_categoria=?";
+        try (Connection con = Database.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Categoria mapRow(ResultSet rs) throws SQLException {
         Categoria c = new Categoria();
         c.id_categoria = rs.getInt("id_categoria");

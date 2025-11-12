@@ -54,7 +54,7 @@ public class ProductoService {
         return repo.save(nuevoProducto);
     }
 
-    public Producto update(Integer id, String codigo, String nombre, String descripcion,
+    public String update(Integer id,Integer idCategoria, String codigo, String nombre, String descripcion,
             BigDecimal precio_compra, BigDecimal precio_venta,
             int stock_actual, int stock_minimo, String unidad_medida, String imagenurl) {
 
@@ -68,6 +68,7 @@ public class ProductoService {
         p.stock_minimo = stock_minimo;
         p.unidad_medida = unidad_medida;
         p.imagenurl = imagenurl;
+        p.id_categoria= idCategoria;
 
         validator.validar(p);
         Categoria categoria = categoriaRepo.findById(p.id_categoria)
@@ -76,7 +77,9 @@ public class ProductoService {
             throw new RuntimeException("No se puede asignar un producto a una categoria inactiva");
         }
         p.id_producto = id;
-        return repo.save(p);
+         repo.save(p);
+         return "Producto con id=" + id + " actualizado " +
+                "\n" + getByIdAsTable(id);
     }
 
     public String  delete(Integer id) {

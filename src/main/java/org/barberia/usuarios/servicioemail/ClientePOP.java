@@ -13,7 +13,7 @@ import java.sql.Statement;
 public class ClientePOP {
     static final String HOST = "mail.tecnoweb.org.bo";
     static final int PORT = 110;
-    static final String USER = "grupo11sc";
+    static final String USER = "grupo11sa";
     static final String PASS = "grup011grup011*";
     static final String DB_URL = "jdbc:postgresql://mail.tecnoweb.org.bo/db_agenda";
     static final String DB_USER = "agenda";

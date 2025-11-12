@@ -58,25 +58,17 @@ public class ReservaService {
             LocalDate fecha_reserva,
             LocalTime hora_inicio,
             LocalTime hora_fin,
-            BigDecimal total,
             String notas,
-            BigDecimal precio_servicio,
-            BigDecimal monto_anticipo,
-            BigDecimal monto_total,
-            MetodoPago metodo_pago,
+            String metodo_pago,
             String tipo_pago,
-            LocalDateTime fecha_pago,
             String notaspago) {
 
         Pago pagoAnticipo = new Pago();
-        pagoAnticipo.metodo_pago = metodo_pago;
+        pagoAnticipo.metodo_pago = MetodoPago.parse(metodo_pago);
         pagoAnticipo.tipo_pago = TipoPago.parse(tipo_pago);
         pagoAnticipo.notas = notaspago;
         pagoAnticipo.estado = EstadoPago.pagado;
-        pagoAnticipo.fecha_pago = fecha_pago;
-
-            
-        
+        pagoAnticipo.fecha_pago = LocalDateTime.now();
 
         Reserva r = new Reserva();
         r.id_cliente = id_cliente;
@@ -86,22 +78,21 @@ public class ReservaService {
         r.hora_inicio = hora_inicio;
         r.hora_fin = hora_fin;
         r.estado = EstadoReserva.confirmada;
-        r.total = total;
         validator.validar(r);
-        if (pagoAnticipo == null) {
-            throw new IllegalArgumentException("El pago de anticipo es obligatorio para crear una reserva");
+
+        Optional<Servicio> servicio = servicioRepo.findById(r.id_servicio);
+        if (servicio.isPresent()) {
+            r.total = servicio.get().precio;
+            r.monto_anticipo = r.total.multiply(BigDecimal.valueOf(0.5));
+            r.precio_servicio = servicio.get().precio;
+        } else {
+            throw new IllegalArgumentException("El servicio con ID " + r.id_servicio + " no existe.");
         }
         Integer reservaId = null;
-        List<Integer> productosCreados = new java.util.ArrayList<>();
         Integer pagoId = null;
         try {
             // 1. Crear la reserva
-            Optional<Servicio> servicio = servicioRepo.findById(r.id_servicio);
-            if (servicio.isPresent()) {
-                r.monto_anticipo = r.total.multiply(BigDecimal.valueOf(0.5));
-            } else {
-                throw new IllegalArgumentException("El servicio con ID " + r.id_servicio + " no existe.");
-            }
+
             List<ServicioProducto> serviciosProductos = servicioProductoRepo.findByServicioId(r.id_servicio);
             for (ServicioProducto sp : serviciosProductos) {
                 Optional<Producto> p = productoRepo.findById(sp.id_producto);
@@ -176,14 +167,15 @@ public class ReservaService {
         return repo.save(r);
     }
 
-    public void delete(Integer id) {
+    public String delete(Integer id) {
         for (Pago p : pagoRepo.findAll()) {
             if (p.id_reserva != null && p.id_reserva.equals(id)) {
                 pagoRepo.deleteById(p.id_pago);
             }
         }
         repo.deleteById(id);
-
+ 
+        return "Reserva con id=" + id + " eliminada.";
     }
 
     public Reserva updateConTransaccion(Integer id, Reserva r) {

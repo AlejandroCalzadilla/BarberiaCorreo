@@ -43,26 +43,45 @@ public class ServicioService {
         return repo.save(s);
     }
 
-    public Servicio update(Integer id,String nombre, String descripcion,
+    public String update(Integer id, String nombre, String descripcion,
             Integer duracion_minutos_aprox,
             BigDecimal precio,
             String imagen) {
-        Servicio s =new Servicio (
-            nombre,
-            descripcion,
-            duracion_minutos_aprox,
-            precio,
-            EstadoItem.activo,
-            imagen
-        );  
+        Servicio s = new Servicio(
+                nombre,
+                descripcion,
+                duracion_minutos_aprox,
+                precio,
+                EstadoItem.activo,
+                imagen);
         s.id_servicio = id;
         validator.validar(s);
-        return repo.save(s);
+        return "Servicio actualizado:  " + "\n" + ServicioMapper.obtenerUnoTable(repo.save(s));
     }
 
     public String delete(Integer id) {
         repo.deleteById(id);
         return "Servicio con id=" + id + " eliminado (soft delete) " +
                 "\n" + getByIdAsTable(id);
+    }
+
+    /**
+     * Alterna el estado de un servicio: si está activo lo desactiva (soft delete),
+     * y si está inactivo lo activa.
+     * @param id id del servicio
+     * @return mensaje con el resultado y la representación en tabla
+     */
+    public String toggleActive(Integer id) {
+        return repo.findById(id)
+            .map(s -> {
+                if (s.estado == EstadoItem.activo) {
+                    repo.softDeleteById(id);
+                    return "Servicio con id=" + id + " desactivado (soft delete)" + "\n" + getByIdAsTable(id);
+                } else {
+                    repo.activateById(id);
+                    return "Servicio con id=" + id + " activado" + "\n" + getByIdAsTable(id);
+                }
+            })
+            .orElse("No se encontró servicio con id=" + id);
     }
 }

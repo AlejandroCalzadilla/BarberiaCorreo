@@ -2,13 +2,23 @@ package org.barberia.usuarios.servicioemail;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.YearMonth;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.barberia.usuarios.domain.Categoria;
+import org.barberia.usuarios.domain.Pago;
 import org.barberia.usuarios.domain.Producto;
+import org.barberia.usuarios.domain.Reserva;
 import org.barberia.usuarios.domain.Usuario;
+import org.barberia.usuarios.domain.enums.EstadoReserva;
+import org.barberia.usuarios.domain.enums.MetodoPago;
+import org.barberia.usuarios.domain.enums.TipoPago;
 import org.barberia.usuarios.repository.BarberoRepository;
 import org.barberia.usuarios.repository.CategoriaRepository;
 import org.barberia.usuarios.repository.ClienteRepository;
@@ -36,6 +46,7 @@ import org.barberia.usuarios.service.HorarioService;
 import org.barberia.usuarios.service.PagoService;
 import org.barberia.usuarios.service.ProductoService;
 import org.barberia.usuarios.service.ReservaService;
+import org.barberia.usuarios.service.ServicioProductoService;
 import org.barberia.usuarios.service.ServicioService;
 import org.barberia.usuarios.service.UsuarioService;
 import org.barberia.usuarios.validation.BarberoValidator;
@@ -45,8 +56,11 @@ import org.barberia.usuarios.validation.HorarioValidator;
 import org.barberia.usuarios.validation.PagoValidator;
 import org.barberia.usuarios.validation.ProductoValidator;
 import org.barberia.usuarios.validation.ReservaValidator;
+import org.barberia.usuarios.validation.ServicioProductoValidator;
 import org.barberia.usuarios.validation.ServicioValidator;
 import org.barberia.usuarios.validation.UsuarioValidator;
+import org.barberia.usuarios.service.ReporteService;
+import org.barberia.usuarios.mapper.ReporteMapper;
 
 public class ComandoEmail {
 
@@ -83,17 +97,30 @@ public class ComandoEmail {
     private ReservaRepository reservaRepository = new JdbcReservaRepository();
     private PagoRepository pagoRepository = new JdbcPagoRepository();
     private PagoValidator pagoValidator = new PagoValidator();
-    private PagoService pagoService = new PagoService(pagoRepository, pagoValidator,reservaRepository);
+    private PagoService pagoService = new PagoService(pagoRepository, pagoValidator, reservaRepository);
     private ServicioProductoRepository reservaProductoRepository = new JdbServicioProductoRepository();
     private ReservaValidator reservaValidator = new ReservaValidator();
     private ReservaService reservaService = new ReservaService(reservaRepository, reservaValidator, pagoRepository,
-            reservaProductoRepository,productoRepository,servicioRepository);
+            reservaProductoRepository, productoRepository, servicioRepository);
+
+
+     private ServicioProductoRepository servicioProductoRepository = new JdbServicioProductoRepository();
+     private ServicioProductoValidator servicioProductoValidator = new ServicioProductoValidator();
+     private ServicioProductoService servicioProductoService = new ServicioProductoService(servicioProductoRepository, servicioProductoValidator);
+
+     private ReporteService reporteService = new ReporteService();
 
     // private CommandHelp commandHelp = new CommandHelp();
     public String evaluarYEjecutar(String subject) throws SQLException {
         if (Objects.equals(subject, "HELP")) {
             return CommandHelp.obtenerComandosDisponibles();
         }
+        
+        // Verificar si es un comando de reporte DASHBOARD
+        if (subject.equals("REPORTEDASHBOARD")) {
+            return ejecutarReporteDashboard();
+        }
+        
         String respuestaConsulta;
 
         // Definir patrones para cada operación CRUD
@@ -102,6 +129,7 @@ public class ComandoEmail {
         Pattern actualizarPatron = Pattern.compile("^UPDATE(\\w+)\\[(.+)]$"); // Ej: UPDATECLIENTES[param1, param2]
         Pattern eliminarPatron = Pattern.compile("^DELETE(\\w+)\\[(.+)]$"); // Ej: DELETECLIENTES[id]
         Pattern getPatron = Pattern.compile("^GET(\\w+)\\[(\\d+)]$"); // Ej: GETMEDICAMENTOS[2]
+        Pattern reportePatron = Pattern.compile("^REPORTE(\\w+)\\[(.+)]$"); // Ej: REPORTEINGRESOS[2025, 10]
 
         Matcher matcher;
 
@@ -116,7 +144,7 @@ public class ComandoEmail {
         } else if ((matcher = actualizarPatron.matcher(subject)).matches()) {
             String entidad = matcher.group(1);
             String parametros = matcher.group(2);
-           // respuestaConsulta = ejecutarConsultaActualizar(entidad, parametros);
+            respuestaConsulta = ejecutarConsultaActualizar(entidad, parametros);
             respuestaConsulta = "";
         } else if ((matcher = eliminarPatron.matcher(subject)).matches()) {
             String entidad = matcher.group(1);
@@ -126,6 +154,10 @@ public class ComandoEmail {
             String entidad = matcher.group(1);
             String id = matcher.group(2);
             respuestaConsulta = ejecutarConsultaGet(entidad, id);
+        } else if ((matcher = reportePatron.matcher(subject)).matches()) {
+            String tipoReporte = matcher.group(1);
+            String parametros = matcher.group(2);
+            respuestaConsulta = ejecutarReporte(tipoReporte, parametros);
         } else {
             respuestaConsulta = "Comando no reconocido.";
         }
@@ -241,8 +273,8 @@ public class ComandoEmail {
                     }
 
                     respuesta = barberoService.create(
-                            Integer.parseInt(params[0]), 
-                            params[1], 
+                            Integer.parseInt(params[0]),
+                            params[1],
                             params[2]).toString();
                 }
                 case "CLIENTES" -> {
@@ -251,8 +283,8 @@ public class ComandoEmail {
                     }
 
                     respuesta = clienteService.create(
-                            Integer.parseInt(params[0]), 
-                            params[1], 
+                            Integer.parseInt(params[0]),
+                            params[1],
                             params[2]).toString();
                 }
                 case "HORARIOS" -> {
@@ -261,11 +293,10 @@ public class ComandoEmail {
                     }
 
                     respuesta = horarioService.create(
-                            params[0], 
-                            params[1], 
+                            params[0],
+                            params[1],
                             params[2],
-                            Integer.parseInt(params[3])
-                            ).toString();
+                            Integer.parseInt(params[3])).toString();
                 }
                 case "SERVICIOS" -> {
                     if (params.length != 3) {
@@ -273,26 +304,29 @@ public class ComandoEmail {
                     }
 
                     respuesta = servicioService.create(
-                            params[0], 
+                            params[0],
                             params[1],
-                            Integer.parseInt(params[2]),  
+                            Integer.parseInt(params[2]),
                             new BigDecimal(params[3]),
-                            params[4]
-                            ).toString();
+                            params[4]).toString();
                 }
-                /* case "RESERVAS" -> {
+                case "RESERVAS" -> {
                     if (params.length != 5) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
 
                     respuesta = reservaService.createConTransaccion(
-                            Integer.parseInt(params[0]), 
-                            Integer.parseInt(params[1]), 
-                            params[2],
-                            params[3],
-                            new BigDecimal(params[4])
-                            ).toString();
-                } */
+                            Integer.parseInt(params[0]),
+                            Integer.parseInt(params[1]),
+                            Integer.parseInt(params[2]),
+                            LocalDate.parse(params[3]),
+                            LocalTime.parse(params[4]),
+                            LocalTime.parse(params[5]),
+                            params[6],
+                            params[7],
+                            params[8],
+                            params[9]).toString();
+                }
 
                 default -> respuesta = "Entidad no encontrada";
             }
@@ -303,175 +337,175 @@ public class ComandoEmail {
         }
     }
 
-    /*
-     * private String ejecutarConsultaActualizar(String entidad, String parametros)
-     * {
-     * String respuesta = "";
-     * try {
-     * String[] params = parametros.split(",");
-     * for (int i = 0; i < params.length; i++) {
-     * params[i] = params[i].trim();
-     * }
-     * switch (entidad) {
-     * case "CLIENTES" -> {
-     * if (params.length != 6) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * ClientesN clientesN = new ClientesN();
-     * respuesta = clientesN.actualizarCliente(
-     * Integer.parseInt(params[0]), params[1], params[2], params[3], params[4],
-     * params[5]
-     * );
-     * }
-     * case "MEDICAMENTOS" -> {
-     * if (params.length != 7) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * MedicamentosN medicamentosN = new MedicamentosN();
-     * Date fechaCaducidad = new Date(new
-     * SimpleDateFormat("dd-MM-yyyy").parse(params[4]).getTime());
-     * boolean esSustanciaControlada = Integer.parseInt(params[5]) != 0;
-     * respuesta = medicamentosN.actualizarMedicamento(
-     * Integer.parseInt(params[0]), params[1], params[2], params[3], fechaCaducidad,
-     * esSustanciaControlada, Integer.parseInt(params[6])
-     * );
-     * }
-     * case "ESPECIES" -> {
-     * if (params.length != 2) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * EspeciesN especiesN = new EspeciesN();
-     * respuesta = especiesN.actualizarEspecie(Integer.parseInt(params[0]),
-     * params[1]);
-     * }
-     * case "MASCOTAS" -> {
-     * if (params.length != 8) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * MascotasN mascotasN = new MascotasN();
-     * respuesta = mascotasN.actualizarMascota(
-     * Integer.parseInt(params[0]), params[1], Float.parseFloat(params[2]),
-     * params[3], params[4], params[5], Integer.parseInt(params[6]),
-     * Integer.parseInt(params[7])
-     * );
-     * }
-     * case "RAZAS" -> {
-     * if (params.length != 3) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * RazasN razasN = new RazasN();
-     * boolean actualizado = razasN.actualizarRaza(
-     * Integer.parseInt(params[0]), params[1], Integer.parseInt(params[2])
-     * );
-     * respuesta = actualizado ? "Raza actualizada" : "Error al actualizar raza";
-     * }
-     * case "CATEGORIAS" -> {
-     * if (params.length != 2) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * CategoriasN categoriasN = new CategoriasN();
-     * respuesta = categoriasN.actualizarCategoria(Integer.parseInt(params[0]),
-     * params[1]);
-     * }
-     * case "ALMACENES" -> {
-     * if (params.length != 4) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * AlmacenesN almacenesN = new AlmacenesN();
-     * respuesta = almacenesN.actualizarAlmacen(
-     * Integer.parseInt(params[0]), params[1], params[2], params[3]
-     * );
-     * }
-     * case "CONSULTAS" -> {
-     * if (params.length < 9 || (params.length - 7) % 2 != 0) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * ConsultasMedicasN consultas = new ConsultasMedicasN();
-     * List<TratamientosN> tratamientos = new ArrayList<>();
-     * for (int i = 7; i < params.length; i += 2) {
-     * tratamientos.add(new TratamientosN(params[i], params[i + 1]));
-     * }
-     * respuesta = consultas.actualizarConsultaMedica(
-     * Integer.parseInt(params[0]), params[1], params[2], params[3],
-     * Float.parseFloat(params[4]),
-     * Integer.parseInt(params[5]), Integer.parseInt(params[6]), tratamientos
-     * );
-     * ;
-     * }
-     * case "PROVEEDORES" -> {
-     * if (params.length != 6) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * ProveedoresN proveedoresN = new ProveedoresN();
-     * respuesta = proveedoresN.actualizarProveedor(
-     * Integer.parseInt(params[0]), params[1], params[2], params[3], params[4],
-     * params[5]
-     * );
-     * }
-     * case "USUARIOS" -> {
-     * if (params.length != 4) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * UsuariosN usuariosN = new UsuariosN();
-     * respuesta = usuariosN.actualizarUsuario(
-     * Integer.parseInt(params[0]), params[1], params[2], params[3]
-     * );
-     * }
-     * case "VACUNAS" -> {
-     * if (params.length != 4) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * VacunasN vacunasN = new VacunasN();
-     * respuesta = vacunasN.actualizarVacuna(
-     * Integer.parseInt(params[0]), params[1], Integer.parseInt(params[2]),
-     * params[3]
-     * );
-     * }
-     * case "NOTASVENTAS" -> {
-     * if (params.length < 9 && (params.length - 5) % 4 != 0) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * NotaVentaN notaVentaN = new NotaVentaN();
-     * List<DetalleNotaVentaN> detalles = new ArrayList<>();
-     * for (int i = 5; i < params.length; i += 4) {
-     * detalles.add(new DetalleNotaVentaN(
-     * Integer.parseInt(params[i]), Float.parseFloat(params[i + 1]),
-     * Float.parseFloat(params[i + 2]), Integer.parseInt(params[i + 3])
-     * ));
-     * }
-     * respuesta = notaVentaN.actualizarNotaVenta(
-     * Integer.parseInt(params[0]), params[1], Integer.parseInt(params[2]),
-     * Integer.parseInt(params[3]),
-     * Integer.parseInt(params[4]), detalles
-     * );
-     * }
-     * case "NOTASCOMPRAS" -> {
-     * if (params.length < 9 && (params.length - 5) % 5 != 0) {
-     * throw new IllegalArgumentException("Número de parámetros incorrecto");
-     * }
-     * List<DetalleNotaCompraN> detalles = new ArrayList<>();
-     * for (int i = 5; i < params.length; i += 5) {
-     * detalles.add(new DetalleNotaCompraN(
-     * Integer.parseInt(params[i]), Float.parseFloat(params[i + 1]),
-     * Float.parseFloat(params[i + 2]), Float.parseFloat(params[i + 3]),
-     * Integer.parseInt(params[i + 4])
-     * ));
-     * }
-     * NotaCompraN notaCompraN = new NotaCompraN();
-     * respuesta = notaCompraN.actualizarNotaCompra(
-     * Integer.parseInt(params[0]), params[1], Integer.parseInt(params[2]),
-     * Integer.parseInt(params[3]),
-     * Integer.parseInt(params[4]), detalles
-     * );
-     * }
-     * default -> respuesta = "Entidad no encontrada";
-     * }
-     * return respuesta;
-     * } catch (Exception e) {
-     * return "Error al actualizar " + entidad + ": " + e.getMessage();
-     * }
-     * }
-     */
+    private String ejecutarConsultaActualizar(String entidad, String parametros) {
+        String respuesta = "";
+        try {
+            String[] params = parametros.split(",");
+            for (int i = 0; i < params.length; i++) {
+                params[i] = params[i].trim();
+            }
+            switch (entidad) {
+                case "PRODUCTOS" -> {
+                    if (params.length != 10) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+                    respuesta=  this.productoService.update(
+                        Integer.parseInt(params[0]),
+                        Integer.parseInt(params[1]),
+                        params[2],
+                        params[3],
+                        params[4],
+                        new BigDecimal(params[5]),
+                        new BigDecimal(params[6]),
+                        Integer.parseInt(params[7]),
+                        Integer.parseInt(params[8]),
+                        params[9],
+                        params[10]).toString();
+                }
+                case "CATEGORIAS" -> {
+                    if (params.length != 3) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+                    respuesta=  categoriaService.update(
+                      Integer.parseInt(params[0]),
+                      params[1],
+                      params[2]
+                    );   
+                    
+                }
+                case "USUARIOS "-> {
+  
+                     if (params.length != 8) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+                    respuesta = usuarioService.update(
+                      Integer.parseInt(params[0]),    
+                      params[1],
+                      params[2],
+                      params[3],
+                      params[4],
+                      params[5],
+                      params[6],
+                      params[7]
+                      );
+
+                }
+                case "ClIENTES" -> {
+                     if (params.length != 4) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+                    respuesta = clienteService.update(
+                        Integer.parseInt(params[0]),
+                        Integer.parseInt(params[1]),
+                        params[2],
+                        params[3]
+
+                    );
+
+                }
+                case "BARBEROS " -> {
+                    if (params.length != 4) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+                    respuesta = clienteService.update(
+                        Integer.parseInt(params[0]),
+                        Integer.parseInt(params[1]),
+                        params[2],
+                        params[3]
+
+                    );
+                }
+
+                 case "HORARIOS" -> {
+                   if (params.length != 4) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+                    respuesta = horarioService.update(
+                        Integer.parseInt(params[0]),
+                        Integer.parseInt(params[1]),
+                        Integer.parseInt(params[2]),
+                        params[3],
+                        LocalTime.parse(params[4]),
+                        LocalTime.parse(params[5])
+                    );
+
+                } 
+                case "SERVICIOS" -> {
+                    if (params.length != 6) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+                    respuesta = servicioService.update(
+                        Integer.parseInt(params[0]),
+                        params[1],
+                        params[2],
+                        Integer.parseInt(params[3]),
+                        new BigDecimal(params[4]),
+                        params[5]
+                    );
+
+                }
+
+                case "SERVICIOPRODUCTOS" -> {
+
+                    //"id_servicio, id_producto, cantidad"
+                    // 1, 2, 3
+
+                    respuesta = servicioProductoService.update (
+                        Integer.parseInt(params[0]),
+                        Integer.parseInt(params[1]),
+                        Integer.parseInt(params[2])
+                    ).toString();
+
+                }
+
+                case "RESERVAS" -> {
+
+                    //"id_cliente ,id_barbero ,id_servicio ,fecha_reserva ,hora_inicio, hora_fin,notas,opcional estado(confirmada, cancelada,completada,no_asistio) ",
+                                
+                    Reserva r = new Reserva();
+                    r.id_reserva = Integer.parseInt(params[0]);
+                    r.id_cliente = Integer.parseInt(params[1]);
+                    r.id_barbero = Integer.parseInt(params[2]);
+                    r.id_servicio = Integer.parseInt(params[3]);
+                    r.fecha_reserva = LocalDate.parse(params[4]);
+                    r.hora_inicio = LocalTime.parse(params[5]);
+                    r.hora_fin = LocalTime.parse(params[6]);
+                    r.notas = params[7];
+                    r.estado = EstadoReserva.parse(params[8]);
+
+                    
+                    respuesta = reservaService.updateConTransaccion(
+                        Integer.parseInt(params[0]),
+                       r
+                    ).toString();
+
+                }
+                case "PAGOS" -> {
+                    if (params.length != 5) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+
+                    Pago p = new Pago();
+                    p.id_pago = Integer.parseInt(params[0]);
+                    p.id_reserva = Integer.parseInt(params[1]);
+                    p.metodo_pago = MetodoPago.parse(params[2]);
+                    p.tipo_pago = TipoPago.parse(params[3]);
+                    p.notas = params[4];
+
+                    respuesta = pagoService.updateReserva (
+                        p,
+                        Integer.parseInt(params[0])
+                    );
+
+                }
+                
+                default -> respuesta = "Entidad no encontrada";
+            }
+            return respuesta;
+        } catch (Exception e) {
+            return "Error al actualizar " + entidad + ": " + e.getMessage();
+        }
+    }
 
     private String ejecutarConsultaEliminar(String entidad, String id) {
         int entityId = Integer.parseInt(id);
@@ -490,7 +524,7 @@ public class ComandoEmail {
                     ;
                 }
                 case "BARBEROS" -> {
-                    respuesta = this.barberoService.delete(entityId);   
+                    respuesta = this.barberoService.delete(entityId);
                 }
 
                 case "HORARIOS" -> {
@@ -503,9 +537,15 @@ public class ComandoEmail {
                     respuesta = this.productoService.delete(entityId);
                 }
                 case "SERVICIOS" -> {
-                     respuesta = this.servicioService.delete(entityId);
+                    respuesta = this.servicioService.delete(entityId);
                 }
-
+               
+                case "RESERVAS" -> {
+                    respuesta = this.reservaService.delete(entityId);
+                }
+                case "PAGOS" -> {
+                    respuesta = pagoService.delete(entityId);
+                }
 
                 default -> respuesta = "Entidad no encontrada";
             }
@@ -542,9 +582,14 @@ public class ComandoEmail {
                     respuesta = this.productoService.getByIdAsTable(id);
                 }
                 case "SERVICIOS" -> {
-                      respuesta = this.servicioService.getByIdAsTable(id);
+                    respuesta = this.servicioService.getByIdAsTable(id);
                 }
-
+                case "RESERVAS" -> {
+                    respuesta = this.reservaService.getByIdAsTable(id);
+                }
+                case "PAGOS" -> {
+                    respuesta = this.pagoService.getByIdAsTable(id);
+                }
 
                 default -> respuesta = "Entidad no encontrada";
             }
@@ -846,5 +891,200 @@ public class ComandoEmail {
      * return sb.toString();
      * }
      */
+
+    // ==================== MÉTODOS PARA REPORTES ====================
+
+    /**
+     * Ejecuta el reporte de dashboard general (mes actual)
+     */
+    private String ejecutarReporteDashboard() {
+        try {
+            YearMonth mesActual = YearMonth.now();
+            Map<String, Object> dashboard = reporteService.getDashboardGeneral(mesActual);
+            
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n╔═══════════════════════════════════════════════════════════════════╗\n");
+            sb.append("║              DASHBOARD GENERAL - ").append(dashboard.get("periodo")).append("                          ║\n");
+            sb.append("╚═══════════════════════════════════════════════════════════════════╝\n\n");
+
+            // Ingresos
+            @SuppressWarnings("unchecked")
+            Map<String, Object> ingresos = (Map<String, Object>) dashboard.get("ingresos");
+            sb.append(ReporteMapper.formatIngresosMensuales(ingresos)).append("\n\n");
+
+            // Top barberos
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> barberos = (List<Map<String, Object>>) dashboard.get("top_barberos");
+            sb.append(ReporteMapper.formatRankingBarberos(barberos)).append("\n\n");
+
+            // Servicios populares
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> servicios = (List<Map<String, Object>>) dashboard.get("servicios_populares");
+            sb.append(ReporteMapper.formatServiciosPopulares(servicios)).append("\n\n");
+
+            // Clientes frecuentes
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> clientes = (List<Map<String, Object>>) dashboard.get("clientes_frecuentes");
+            sb.append(ReporteMapper.formatClientesFrecuentes(clientes)).append("\n\n");
+
+            // Distribución de estados
+            @SuppressWarnings("unchecked")
+            Map<String, Object> estados = (Map<String, Object>) dashboard.get("distribucion_estados");
+            sb.append(ReporteMapper.formatDistribucionEstados(estados)).append("\n\n");
+
+            // Métodos de pago
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> metodos = (List<Map<String, Object>>) dashboard.get("metodos_pago");
+            sb.append(ReporteMapper.formatMetodosPago(metodos)).append("\n\n");
+
+            // Horas pico
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> horas = (List<Map<String, Object>>) dashboard.get("horas_pico");
+            sb.append(ReporteMapper.formatHorasPico(horas)).append("\n\n");
+
+            // Días más ocupados
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> dias = (List<Map<String, Object>>) dashboard.get("dias_ocupados");
+            sb.append(ReporteMapper.formatDiasMasOcupados(dias)).append("\n");
+
+            return sb.toString();
+        } catch (Exception e) {
+            return "Error al generar dashboard: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Ejecuta reportes individuales con parámetros personalizados
+     */
+    private String ejecutarReporte(String tipoReporte, String parametros) {
+        try {
+            String[] params = parametros.split(",");
+            for (int i = 0; i < params.length; i++) {
+                params[i] = params[i].trim();
+            }
+
+            return switch (tipoReporte) {
+                case "INGRESOS" -> {
+                    // REPORTEINGRESOS[2025, 10]
+                    if (params.length < 2) {
+                        yield "Error: Se requieren año y mes. Ejemplo: REPORTEINGRESOS[2025, 10]";
+                    }
+                    int año = Integer.parseInt(params[0]);
+                    int mes = Integer.parseInt(params[1]);
+                    Map<String, Object> ingresos = reporteService.getIngresosMensuales(año, mes);
+                    yield ReporteMapper.formatIngresosMensuales(ingresos);
+                }
+
+                case "RANKINGBARBEROS" -> {
+                    // REPORTERANKINGBARBEROS[2025-10-01, 2025-10-31]
+                    if (params.length < 2) {
+                        yield "Error: Se requieren fecha inicio y fecha fin. Ejemplo: REPORTERANKINGBARBEROS[2025-10-01, 2025-10-31]";
+                    }
+                    LocalDate inicio = LocalDate.parse(params[0]);
+                    LocalDate fin = LocalDate.parse(params[1]);
+                    List<Map<String, Object>> ranking = reporteService.getRankingBarberos(inicio, fin);
+                    yield ReporteMapper.formatRankingBarberos(ranking);
+                }
+
+                case "SERVICIOSPOPULARES" -> {
+                    // REPORTESERVICIOSPOPULARES[2025-01-01, 2025-12-31, 5]
+                    if (params.length < 3) {
+                        yield "Error: Se requieren fecha inicio, fecha fin y límite. Ejemplo: REPORTESERVICIOSPOPULARES[2025-01-01, 2025-12-31, 5]";
+                    }
+                    LocalDate inicio = LocalDate.parse(params[0]);
+                    LocalDate fin = LocalDate.parse(params[1]);
+                    int limite = Integer.parseInt(params[2]);
+                    List<Map<String, Object>> servicios = reporteService.getServiciosMasPopulares(inicio, fin, limite);
+                    yield ReporteMapper.formatServiciosPopulares(servicios);
+                }
+
+                case "CLIENTESFRECUENTES" -> {
+                    // REPORTECLIENTESFRECUENTES[2025-01-01, 2025-12-31, 10]
+                    if (params.length < 3) {
+                        yield "Error: Se requieren fecha inicio, fecha fin y límite. Ejemplo: REPORTECLIENTESFRECUENTES[2025-01-01, 2025-12-31, 10]";
+                    }
+                    LocalDate inicio = LocalDate.parse(params[0]);
+                    LocalDate fin = LocalDate.parse(params[1]);
+                    int limite = Integer.parseInt(params[2]);
+                    List<Map<String, Object>> clientes = reporteService.getClientesFrecuentes(inicio, fin, limite);
+                    yield ReporteMapper.formatClientesFrecuentes(clientes);
+                }
+
+                case "DISTRIBUCIONESTADOS" -> {
+                    // REPORTEDISTRIBUCIONESTADOS[2025-07-01, 2025-09-30]
+                    if (params.length < 2) {
+                        yield "Error: Se requieren fecha inicio y fecha fin. Ejemplo: REPORTEDISTRIBUCIONESTADOS[2025-07-01, 2025-09-30]";
+                    }
+                    LocalDate inicio = LocalDate.parse(params[0]);
+                    LocalDate fin = LocalDate.parse(params[1]);
+                    Map<String, Object> distribucion = reporteService.getDistribucionEstados(inicio, fin);
+                    yield ReporteMapper.formatDistribucionEstados(distribucion);
+                }
+
+                case "HORASPICO" -> {
+                    // REPORTEHORASPICO[2025-10-01, 2025-10-31]
+                    if (params.length < 2) {
+                        yield "Error: Se requieren fecha inicio y fecha fin. Ejemplo: REPORTEHORASPICO[2025-10-01, 2025-10-31]";
+                    }
+                    LocalDate inicio = LocalDate.parse(params[0]);
+                    LocalDate fin = LocalDate.parse(params[1]);
+                    List<Map<String, Object>> horas = reporteService.getHorasPico(inicio, fin);
+                    yield ReporteMapper.formatHorasPico(horas);
+                }
+
+                case "DIASOCUPADOS" -> {
+                    // REPORTEDIASMOCUPADOS[2025-10-01, 2025-10-31]
+                    if (params.length < 2) {
+                        yield "Error: Se requieren fecha inicio y fecha fin. Ejemplo: REPORTEDIASOCUPADOS[2025-10-01, 2025-10-31]";
+                    }
+                    LocalDate inicio = LocalDate.parse(params[0]);
+                    LocalDate fin = LocalDate.parse(params[1]);
+                    List<Map<String, Object>> dias = reporteService.getDiasMasOcupados(inicio, fin);
+                    yield ReporteMapper.formatDiasMasOcupados(dias);
+                }
+
+                case "METODOSPAGO" -> {
+                    // REPORTEMETODOSPAGO[2025-01-01, 2025-12-31]
+                    if (params.length < 2) {
+                        yield "Error: Se requieren fecha inicio y fecha fin. Ejemplo: REPORTEMETODOSPAGO[2025-01-01, 2025-12-31]";
+                    }
+                    LocalDate inicio = LocalDate.parse(params[0]);
+                    LocalDate fin = LocalDate.parse(params[1]);
+                    List<Map<String, Object>> metodos = reporteService.getDistribucionMetodosPago(inicio, fin);
+                    yield ReporteMapper.formatMetodosPago(metodos);
+                }
+
+                case "CONSUMOPRODUCTOS" -> {
+                    // REPORTECONSUMOPRODUCTOS[2025-10-01, 2025-10-31]
+                    if (params.length < 2) {
+                        yield "Error: Se requieren fecha inicio y fecha fin. Ejemplo: REPORTECONSUMOPRODUCTOS[2025-10-01, 2025-10-31]";
+                    }
+                    LocalDate inicio = LocalDate.parse(params[0]);
+                    LocalDate fin = LocalDate.parse(params[1]);
+                    List<Map<String, Object>> productos = reporteService.getConsumoProductos(inicio, fin);
+                    yield ReporteMapper.formatConsumoProductos(productos);
+                }
+
+                case "ESTADISTICASBARBERO" -> {
+                    // REPORTEESTADISTICASBARBERO[1, 2025-10-01, 2025-10-31]
+                    if (params.length < 3) {
+                        yield "Error: Se requieren id_barbero, fecha inicio y fecha fin. Ejemplo: REPORTEESTADISTICASBARBERO[1, 2025-10-01, 2025-10-31]";
+                    }
+                    int idBarbero = Integer.parseInt(params[0]);
+                    LocalDate inicio = LocalDate.parse(params[1]);
+                    LocalDate fin = LocalDate.parse(params[2]);
+                    Map<String, Object> stats = reporteService.getEstadisticasBarbero(idBarbero, inicio, fin);
+                    yield ReporteMapper.formatEstadisticasBarbero(stats);
+                }
+
+                default -> "Tipo de reporte no reconocido: " + tipoReporte;
+            };
+
+        } catch (NumberFormatException e) {
+            return "Error: Formato numérico inválido en los parámetros.";
+        } catch (Exception e) {
+            return "Error al generar reporte: " + e.getMessage();
+        }
+    }
 
 }

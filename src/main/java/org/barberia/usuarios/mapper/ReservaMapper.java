@@ -7,7 +7,7 @@ import java.util.List;
 public class ReservaMapper {
     public static String obtenerTodosTable(List<Reserva> items) {
         StringBuilder sb = new StringBuilder();
-        int idW=10, cliW=10, barW=10, srvW=10, fechaW=10, hiW=8, hfW=8, estW=15, totalW=12, precioW=12, anticW=12, createdW=19, updatedW=19;
+        int idW=4, cliW=7, barW=7, srvW=7, fechaW=10, hiW=8, hfW=8, estW=12, totalW=8, precioW=9, anticW=8, createdW=19, updatedW=19;
         int notasW=20;
 
         sb.append("┌").append("─".repeat(idW))

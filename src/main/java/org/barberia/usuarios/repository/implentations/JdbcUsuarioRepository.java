@@ -156,6 +156,28 @@ public class JdbcUsuarioRepository implements UsuarioRepository {
         }
     }
 
+    @Override
+    public List<Usuario> findAvailableUsuarios() {
+        String sql = "SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.telefono, u.direccion, " +
+                     "u.created_at, u.updated_at, u.estado, u.username, u.password " +
+                     "FROM usuario u " +
+                     "WHERE u.estado = 'activo' " +
+                     "AND u.id_usuario NOT IN (SELECT id_usuario FROM barbero) " +
+                     "AND u.id_usuario NOT IN (SELECT id_usuario FROM cliente) " +
+                     "ORDER BY u.id_usuario";
+        List<Usuario> list = new ArrayList<>();
+        try (Connection con = Database.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return list;
+    }
+
      
 
     private Usuario mapRow(ResultSet rs) throws SQLException {

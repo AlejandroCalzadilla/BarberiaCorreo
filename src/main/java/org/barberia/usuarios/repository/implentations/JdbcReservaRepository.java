@@ -13,7 +13,7 @@ import java.util.Optional;
 public class JdbcReservaRepository implements ReservaRepository {
     @Override
     public List<Reserva> findAll() {
-        String sql = "SELECT id_reserva, id_cliente, id_barbero, id_servicio, fecha_reserva, hora_inicio, hora_fin, estado, total, notas, fecha_creacion, monto_anticipo, created_at, updated_at FROM reserva ORDER BY id_reserva";
+        String sql = "SELECT id_reserva, id_cliente, id_barbero, id_servicio, fecha_reserva, hora_inicio, hora_fin, estado, total, notas, monto_anticipo, created_at, updated_at FROM reserva ORDER BY id_reserva";
         List<Reserva> list = new ArrayList<>();
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) list.add(mapRow(rs));
@@ -46,7 +46,7 @@ public class JdbcReservaRepository implements ReservaRepository {
             ps.setDate(4, r.fecha_reserva != null ? Date.valueOf(r.fecha_reserva) : null);
             ps.setTime(5, r.hora_inicio != null ? Time.valueOf(r.hora_inicio) : null);
             ps.setTime(6, r.hora_fin != null ? Time.valueOf(r.hora_fin) : null);
-            ps.setString(7, r.estado != null ? r.estado.name() : EstadoReserva.pendiente_pago.name());
+            ps.setString(7, r.estado != null ? r.estado.name() : EstadoReserva.confirmada.name());
             ps.setBigDecimal(8, r.total);
             ps.setString(9, r.notas);
             ps.setBigDecimal(10, r.monto_anticipo);
@@ -72,7 +72,7 @@ public class JdbcReservaRepository implements ReservaRepository {
             ps.setDate(4, r.fecha_reserva != null ? Date.valueOf(r.fecha_reserva) : null);
             ps.setTime(5, r.hora_inicio != null ? Time.valueOf(r.hora_inicio) : null);
             ps.setTime(6, r.hora_fin != null ? Time.valueOf(r.hora_fin) : null);
-            ps.setString(7, r.estado != null ? r.estado.name() : EstadoReserva.pendiente_pago.name());
+            ps.setString(7, r.estado != null ? r.estado.name() : EstadoReserva.confirmada.name());
             ps.setBigDecimal(8, r.total);
             ps.setString(9, r.notas);
             ps.setBigDecimal(10, r.monto_anticipo);

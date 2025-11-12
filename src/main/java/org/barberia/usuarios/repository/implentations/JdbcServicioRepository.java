@@ -92,6 +92,24 @@ public class JdbcServicioRepository implements ServicioRepository {
         } catch (SQLException e) { throw new RuntimeException(e); }
     }
 
+    @Override
+    public void softDeleteById(Integer id) {
+        String sql = "UPDATE servicio SET estado='inactivo'::estado_item, updated_at=now() WHERE id_servicio=?";
+        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    @Override
+    public void activateById(Integer id) {
+        String sql = "UPDATE servicio SET estado='activo'::estado_item, updated_at=now() WHERE id_servicio=?";
+        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
     private Servicio mapRow(ResultSet rs) throws SQLException {
         Servicio s = new Servicio();
         s.id_servicio = rs.getInt("id_servicio");

@@ -3,6 +3,7 @@ package org.barberia.usuarios.service;
 import java.lang.StackWalker.Option;
 import java.util.Optional;
 
+import org.barberia.usuarios.domain.Barbero;
 import org.barberia.usuarios.domain.Cliente;
 import org.barberia.usuarios.domain.Usuario;
 import org.barberia.usuarios.domain.enums.EstadoUsuario;
@@ -18,7 +19,7 @@ public class ClienteService {
 
     public ClienteService(ClienteRepository repo, UsuarioRepository usuarioRepo, ClienteValidator validator) {
         this.repo = repo;
-        this.usuarioRepo = usuarioRepo; 
+        this.usuarioRepo = usuarioRepo;
         this.validator = validator;
     }
 
@@ -30,7 +31,7 @@ public class ClienteService {
         return repo.findById(id).map(ClienteMapper::obtenerUnoTable).orElse("No se encontró cliente con id=" + id);
     }
 
-    public Cliente create( Integer id_usuario, String fecha_nacimiento, String ci) {
+    public Cliente create(Integer id_usuario, String fecha_nacimiento, String ci) {
         Cliente c = new Cliente();
         c.id_usuario = id_usuario;
         c.fecha_nacimiento = fecha_nacimiento;
@@ -39,35 +40,69 @@ public class ClienteService {
         if (u.isEmpty()) {
             throw new IllegalArgumentException("Usuario no encontrado");
         }
-        if( repo.findByUsuarioId(c.id_usuario).isPresent()) {
+        if (repo.findByUsuarioId(c.id_usuario).isPresent()) {
             throw new IllegalArgumentException("El usuario ya está asociado a un cliente");
         }
-        if( u.get().estado != EstadoUsuario.activo) {
+        if (u.get().estado != EstadoUsuario.activo) {
             throw new IllegalArgumentException("El usuario debe estar activo para asociarse a un cliente");
         }
         validator.validar(c);
         return repo.save(c);
     }
 
-    public Cliente update(Integer id, Cliente c) {
+    public String update(
+            Integer id_cliente,
+            Integer id_usuario,
+            String fecha_nacimiento,
+            String ci) {
+
+        Cliente c = new Cliente();
+        c.id_cliente=id_cliente;
+        c.id_usuario= id_usuario;
+        c.fecha_nacimiento=fecha_nacimiento;
+        c.ci=ci;
+
         validator.validar(c);
+        Optional <Cliente> cliente= repo.findById(id_cliente);
+        if(cliente.isEmpty()){
+             throw new IllegalArgumentException("Cleinte no econtrado");
+        
+        } 
         Optional<Usuario> u = usuarioRepo.findById(c.id_cliente);
         if (u.isEmpty()) {
             throw new IllegalArgumentException("Usuario no encontrado");
         }
-        if( repo.findByUsuarioId(c.id_usuario).isPresent()) {
+        if (repo.findByUsuarioId(c.id_usuario).isPresent()) {
             throw new IllegalArgumentException("El usuario ya está asociado a un cliente");
         }
-        if( u.get().estado != EstadoUsuario.activo) {
+        if (u.get().estado != EstadoUsuario.activo) {
             throw new IllegalArgumentException("El usuario debe estar activo para asociarse a un cliente");
         }
-        c.id_cliente = id;
-        return repo.save(c);
+        
+        repo.save(c);
+        return "Cliente c id=" + c.id_cliente + " actualizado" +
+                "\n" + getByIdAsTable(c.id_cliente);
     }
 
     public String delete(Integer id) {
-        repo.deleteById(id);
-        return "Cliente con id=" + id + " eliminado (soft delete)" +
-                "\n" + getByIdAsTable(id);
+        Optional<Cliente> cliente = repo.findById(id);
+        if (cliente.isPresent()) {
+            return usuarioRepo.findById(cliente.get().id_usuario)
+                    .map(u -> {
+                        if (u.estado == EstadoUsuario.activo) {
+                            usuarioRepo.deleteById(u.id);
+                            return "Cliente con id=" + id + " desactivado (soft delete)" + "\n" + getByIdAsTable(id);
+                        } else {
+                            usuarioRepo.activateById(u.id);
+                            return "Cliente con id=" + id + " activado" + "\n" + getByIdAsTable(id);
+                        }
+                    })
+                    .orElse("No se encontró usuario con id=" + id);
+
+        }
+        else{
+                throw new IllegalArgumentException("no existe barbero con id "+id);
+         
+        }
     }
 }

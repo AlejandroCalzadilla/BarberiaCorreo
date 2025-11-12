@@ -1,6 +1,7 @@
 package org.barberia.usuarios.service;
 
 import org.barberia.usuarios.domain.Categoria;
+import org.barberia.usuarios.domain.enums.EstadoCategoria;
 import org.barberia.usuarios.mapper.CategoriaMapper;
 import org.barberia.usuarios.repository.CategoriaRepository;
 import org.barberia.usuarios.validation.CategoriaValidator;
@@ -35,6 +36,7 @@ public class CategoriaService {
         Categoria c = new Categoria();
         c.nombre = nombre;
         c.descripcion = descripcion;
+        c.estado = EstadoCategoria.activa;
         validator.validar(c);
         return repo.save(c);
     }
@@ -48,13 +50,29 @@ public class CategoriaService {
         return "categoria actualizada: " + repo.save(c).toString();
     }
 
-    public String softDeleteById(Integer id) {
-       return " categoria ahora es :  " + repo.softDeleteById(id);
-    }
-
     public String  deleteById(Integer id) {
         repo.deleteById(id);
         return "Categoria con id=" + id + " eliminada (soft delete) " +
                 "\n" + getByIdAsTable(id);
+    }
+
+    /**
+     * Alterna el estado de una categoría: si está activa la desactiva (soft delete),
+     * y si está inactiva la activa.
+     * @param id id de la categoría
+     * @return mensaje con el resultado y la representación en tabla
+     */
+    public String toggleActive(Integer id) {
+        return repo.findById(id)
+            .map(c -> {
+                if (c.estado == EstadoCategoria.activa) {
+                    repo.softDeleteById(id);
+                    return "Categoria con id=" + id + " desactivada (soft delete)" + "\n" + getByIdAsTable(id);
+                } else {
+                    repo.activateById(id);
+                    return "Categoria con id=" + id + " activada" + "\n" + getByIdAsTable(id);
+                }
+            })
+            .orElse("No se encontró categoria con id=" + id);
     }
 }

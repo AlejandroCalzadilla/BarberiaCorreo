@@ -44,21 +44,34 @@ public class HorarioService {
         List<Horario> horarios = repo.findAll();
         for (Horario horarioExistente : horarios) {
             if (horarioExistente.id_barbero.equals(h.id_barbero) &&
-                horarioExistente.dia_semana.equals(h.dia_semana)) {
+                    horarioExistente.dia_semana.equals(h.dia_semana)) {
                 // Verificar si hay solapamiento de horarios
                 if (horariosSeSuperponen(horarioExistente, h)) {
                     throw new IllegalArgumentException(
-                        String.format("El barbero ya tiene un horario que se solapa en %s de %s a %s. " +
-                                     "No se puede crear el horario de %s a %s.",
-                                     h.dia_semana, horarioExistente.hora_inicio, horarioExistente.hora_fin,
-                                     h.hora_inicio, h.hora_fin));
+                            String.format("El barbero ya tiene un horario que se solapa en %s de %s a %s. " +
+                                    "No se puede crear el horario de %s a %s.",
+                                    h.dia_semana, horarioExistente.hora_inicio, horarioExistente.hora_fin,
+                                    h.hora_inicio, h.hora_fin));
                 }
             }
         }
         return repo.save(h);
     }
 
-    public Horario update(Integer id, Horario h) {
+    public String update(Integer id, 
+    Integer id_horario,
+    Integer id_barbero,
+    String dia_semana,
+    LocalTime hora_inicio,
+     LocalTime hora_fin
+    ) 
+    
+    {
+        Horario h = new Horario();
+        h.id_horario=id_horario;
+        h.id_barbero= id_barbero;
+        h.dia_semana = DiaSemana.parse(dia_semana);
+        
         validator.validar(h);
         h.id_horario = id;
         
@@ -75,8 +88,7 @@ public class HorarioService {
                 }
             }
         }
-        
-        return repo.save(h);
+        return HorarioMapper.obtenerUnoTable(repo.save(h));
     }
 
     public String delete(Integer id) {
@@ -84,7 +96,7 @@ public class HorarioService {
         return "Horario con id=" + id + " eliminado " +
                 "\n" + getByIdAsTable(id);
     }
-    
+
     /**
      * Verifica si dos horarios se superponen.
      * Dos horarios se superponen si:
