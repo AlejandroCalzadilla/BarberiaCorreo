@@ -97,6 +97,10 @@ public class JdbcBarberoRepository implements BarberoRepository {
         return Optional.empty();
     }
 
+
+  
+
+
     private Barbero mapRow(ResultSet rs) throws SQLException {
         Barbero b = new Barbero();
         b.id_barbero = rs.getInt("id_barbero");
@@ -109,5 +113,20 @@ public class JdbcBarberoRepository implements BarberoRepository {
         b.created_at = cr != null ? cr.toLocalDateTime() : null;
         b.updated_at = up != null ? up.toLocalDateTime() : null;
         return b;
+    }
+
+
+    public boolean activo (int id_barbero) {
+           String sql = "SELECT u.estado FROM usuario u JOIN barbero b ON u.id = b.id_usuario WHERE b.id_barbero=?";
+        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id_barbero);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String estado = rs.getString("estado");
+                    return EstadoUsuario.valueOf(estado) == EstadoUsuario.activo;
+                }
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+        return false;
     }
 }

@@ -60,7 +60,7 @@ public class Application {
         servicioProductoValidator);
     PagoService pagoService = new PagoService(pagoRepository, pagoValidator, reservaRepository);
     ReservaService reservaService = new ReservaService(reservaRepository, reservaValidator, pagoRepository,
-        servicioProductoRepository, productoRepository, servicioRepository);
+          servicioRepository,barberoRepository ,usuarioRepository, horarioRepository,servicioProductoRepository, productoRepository);
     CommandHelp commandHelp = new CommandHelp();
 
     System.out.println(commandHelp.obtenerComandosDisponibles());

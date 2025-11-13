@@ -32,10 +32,8 @@ public class PagoService {
         return repo.findById(id).map(PagoMapper::obtenerUnoTable).orElse("No se encontró pago con id=" + id);
     }
 
-    public Pago createReserva(Pago p, Integer reservaId) {
+    public Pago create(Pago p, Integer reservaId) {
         reservaRepo.findById(reservaId).orElseThrow(() -> new IllegalArgumentException("Reserva no encontrada"));
-        p.estado = EstadoPago.pagado;
-        p.tipo_pago = TipoPago.pago_final;
         validator.validar(p);
         p.id_reserva = reservaId;
         return repo.save(p);
@@ -43,10 +41,8 @@ public class PagoService {
 
    
 
-    public String updateReserva(Pago p, Integer reservaId) {
+    public String update(Pago p, Integer reservaId) {
         reservaRepo.findById(reservaId).orElseThrow(() -> new IllegalArgumentException("Reserva no encontrada"));
-        p.estado = EstadoPago.pagado;
-        p.tipo_pago = TipoPago.pago_final;
         validator.validar(p);
         p.id_reserva = reservaId;
         return "Pago actualizado con id=" + repo.save(p).id_pago;

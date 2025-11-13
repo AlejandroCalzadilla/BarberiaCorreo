@@ -1,10 +1,11 @@
 package org.barberia.usuarios.servicioemail;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class ClienteSMTP {
 
@@ -12,9 +13,10 @@ public class ClienteSMTP {
     private static final int PUERTO = 25;
     private static final String EMISOR = "grupo11sa@tecnoweb.org.bo";
 
-    private static void enviarComando(DataOutputStream salida, BufferedReader entrada, String comando)
+    private static void enviarComando(OutputStreamWriter salida, BufferedReader entrada, String comando)
             throws IOException {
-        salida.writeBytes(comando);
+        salida.write(comando);
+        salida.flush();
         String respuesta = leerRespuesta(entrada);
 
         int codigoRespuesta = Integer.parseInt(respuesta.substring(0, 3));
@@ -28,7 +30,7 @@ public class ClienteSMTP {
         StringBuilder lines = new StringBuilder();
         String line;
         while ((line = in.readLine()) != null) {
-            lines.append(line).append("\n");
+            lines.append(line).append("\r\n");
             if (line.length() > 3 && line.charAt(3) == ' ')
                 break;
         }
@@ -40,16 +42,25 @@ public class ClienteSMTP {
 
     public void enviarCorreo(String usuarioReceptor, String subject, String mensaje) {
         try (Socket socket = new Socket(SERVIDOR, PUERTO);
-                BufferedReader entrada = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                DataOutputStream salida = new DataOutputStream(socket.getOutputStream())) {
+                BufferedReader entrada = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                OutputStreamWriter salida = new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8)) {
 
             System.out.println("S : " + entrada.readLine());
+
+            String mensajeFormateado = mensaje.replace("\n", "\r\n");
 
             enviarComando(salida, entrada, "HELO " + SERVIDOR + "\r\n");
             enviarComando(salida, entrada, "MAIL FROM: " + EMISOR + " \r\n");
             enviarComando(salida, entrada, "RCPT TO: " + usuarioReceptor + " \r\n");
             enviarComando(salida, entrada, "DATA\r\n");
-            enviarComando(salida, entrada, "Subject: " + subject + "\r\n" + mensaje + "\r\n.\r\n");
+            
+            salida.write("Subject: " + subject + "\r\n");
+            salida.write("Content-Type: text/plain; charset=utf-8\r\n");
+            salida.write("\r\n");
+            salida.write(mensajeFormateado + "\r\n.\r\n");
+            salida.flush();
+            leerRespuesta(entrada);
+
             enviarComando(salida, entrada, "QUIT\r\n");
 
         } catch (Exception e) {

@@ -78,9 +78,9 @@ public class CommandHelp {
 
                 COMMANDS.add(new CommandExample("CREATE",
                                 "RESERVAS",
-                                "crear una nueva reserva",
-                                "id_cliente ,id_barbero ,id_servicio ,fecha_reserva ,hora_inicio, hora_fin,notas,  ",
-                                "CREATERESERVAS[1, 1, 1, 2024-12-01, 10:00, 11:00 ,reserva para corte de cabello]"));
+                                "Crear una nueva reserva (valida barbero activo y horario)",
+                                "id_cliente, id_barbero, id_servicio, fecha_reserva(YYYY-MM-DD), hora_inicio(HH:MM), hora_fin(HH:MM), notas",
+                                "CREATERESERVAS[1, 1, 1, 2024-12-01, 10:00, 11:00, reserva para corte de cabello]"));
 
                 // COMMANDS.add(null)
 
@@ -144,9 +144,9 @@ public class CommandHelp {
                 COMMANDS.add(new CommandExample(
                                 "UPDATE",
                                 "RESERVAS",
-                                "Actualizar una reserva",
-                                "id_reserva, id_cliente ,id_barbero ,id_servicio ,fecha_reserva ,hora_inicio, hora_fin,notas,opcional estado(confirmada, cancelada,completada,no_asistio) ",
-                                "UPDATERESERVAS[1,1, 1, 1, 2024-12-01, 10:00, 11:00 ,reserva para corte de cabello, completada]"));
+                                "Actualizar una reserva (valida barbero activo y horario si cambian)",
+                                "id_reserva, id_cliente, id_barbero, id_servicio, fecha_reserva(YYYY-MM-DD), hora_inicio(HH:MM), hora_fin(HH:MM), notas, estado(confirmada|cancelada|completada|no_asistio|en_proceso)",
+                                "UPDATERESERVAS[1, 1, 1, 1, 2024-12-01, 10:00, 11:00, reserva para corte de cabello, completada]"));
                 COMMANDS.add(new CommandExample("UPDATE",
                                 "PAGOS",
                                 "actualizar un  pago ",

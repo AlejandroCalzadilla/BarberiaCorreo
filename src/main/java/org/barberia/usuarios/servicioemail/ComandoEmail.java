@@ -94,6 +94,11 @@ public class ComandoEmail {
     private ServicioValidator servicioValidator = new ServicioValidator();
     private ServicioService servicioService = new ServicioService(servicioRepository, servicioValidator);
 
+     private ServicioProductoRepository servicioProductoRepository = new JdbServicioProductoRepository();
+     private ServicioProductoValidator servicioProductoValidator = new ServicioProductoValidator();
+     private ServicioProductoService servicioProductoService = new ServicioProductoService(servicioProductoRepository, servicioProductoValidator);
+
+   
     private ReservaRepository reservaRepository = new JdbcReservaRepository();
     private PagoRepository pagoRepository = new JdbcPagoRepository();
     private PagoValidator pagoValidator = new PagoValidator();
@@ -101,13 +106,10 @@ public class ComandoEmail {
     private ServicioProductoRepository reservaProductoRepository = new JdbServicioProductoRepository();
     private ReservaValidator reservaValidator = new ReservaValidator();
     private ReservaService reservaService = new ReservaService(reservaRepository, reservaValidator, pagoRepository,
-            reservaProductoRepository, productoRepository, servicioRepository);
+             servicioRepository,barberoRepository,usuarioRepository,horarioRepository, servicioProductoRepository,productoRepository );
 
 
-     private ServicioProductoRepository servicioProductoRepository = new JdbServicioProductoRepository();
-     private ServicioProductoValidator servicioProductoValidator = new ServicioProductoValidator();
-     private ServicioProductoService servicioProductoService = new ServicioProductoService(servicioProductoRepository, servicioProductoValidator);
-
+   
      private ReporteService reporteService = new ReporteService();
 
     // private CommandHelp commandHelp = new CommandHelp();
@@ -310,7 +312,7 @@ public class ComandoEmail {
                             new BigDecimal(params[3]),
                             params[4]).toString();
                 }
-                case "RESERVAS" -> {
+                /* case "RESERVAS" -> {
                     if (params.length != 5) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
@@ -326,7 +328,7 @@ public class ComandoEmail {
                             params[7],
                             params[8],
                             params[9]).toString();
-                }
+                } */
 
                 default -> respuesta = "Entidad no encontrada";
             }
@@ -457,7 +459,7 @@ public class ComandoEmail {
                     ).toString();
 
                 }
-
+/* 
                 case "RESERVAS" -> {
 
                     //"id_cliente ,id_barbero ,id_servicio ,fecha_reserva ,hora_inicio, hora_fin,notas,opcional estado(confirmada, cancelada,completada,no_asistio) ",
@@ -479,8 +481,8 @@ public class ComandoEmail {
                        r
                     ).toString();
 
-                }
-                case "PAGOS" -> {
+                } */
+               /*  case "PAGOS" -> {
                     if (params.length != 5) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
@@ -497,7 +499,7 @@ public class ComandoEmail {
                         Integer.parseInt(params[0])
                     );
 
-                }
+                } */
                 
                 default -> respuesta = "Entidad no encontrada";
             }

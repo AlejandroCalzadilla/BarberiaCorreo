@@ -88,4 +88,16 @@ public class BarberoService {
          
         }
     }
+
+    public boolean barberoActivo(int id_barbero) {
+        Optional<Barbero> b = repo.findById(id_barbero);
+        if (b.isEmpty()) {
+            throw new IllegalArgumentException("Barbero no encontrado");
+        }
+        Optional<Usuario> u = usuarioRepo.findById(b.get().id_usuario);
+        if (u.isEmpty()) {
+            throw new IllegalArgumentException("Usuario no encontrado");
+        }
+        return u.get().estado == EstadoUsuario.activo;
+    }
 }
