@@ -162,6 +162,13 @@ public class CommandHelpHTML {
         html.append("li { background: #fff; margin: 8px 0; padding: 10px; border-radius: 5px; border-left: 3px solid #95a5a6; }\n");
         html.append(".entity-list { background: #e8f4f8; padding: 15px; border-radius: 5px; margin: 10px 0; }\n");
         html.append(".report-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 10px 0; border-radius: 5px; }\n");
+        html.append(".general-command-box { background: #e8f8f5; border-left: 4px solid #1abc9c; padding: 15px; margin: 10px 0; border-radius: 5px; }\n");
+        html.append("table { width: 100%; border-collapse: collapse; margin: 20px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }\n");
+        html.append("th { background: #3498db; color: white; padding: 12px; text-align: left; font-weight: bold; }\n");
+        html.append("td { padding: 12px; border-bottom: 1px solid #ddd; background: #fff; }\n");
+        html.append("tr:hover td { background: #f5f5f5; }\n");
+        html.append(".entity-name { font-weight: bold; color: #2c3e50; background: #ecf0f1 !important; padding: 10px; }\n");
+        html.append(".example-code { font-family: monospace; color: #c0392b; background: #fef9e7; padding: 5px; border-radius: 3px; }\n");
         html.append("</style>\n");
         html.append("</head>\n<body>\n");
         html.append("<div class='container'>\n");
@@ -171,14 +178,54 @@ public class CommandHelpHTML {
 
         // Comandos generales
         html.append("<h2>⚙️ COMANDOS GENERALES</h2>\n");
-        html.append("<ul>\n");
-        html.append("<li><strong>LISTAR&lt;entidad&gt;[*]</strong> - Listar todos los registros</li>\n");
-        html.append("<li><strong>CREATE&lt;entidad&gt;[params...]</strong> - Crear un nuevo registro</li>\n");
-        html.append("<li><strong>UPDATE&lt;entidad&gt;[id, params...]</strong> - Actualizar un registro</li>\n");
-        html.append("<li><strong>DELETE&lt;entidad&gt;[id]</strong> - Eliminar un registro</li>\n");
-        html.append("<li><strong>GET&lt;entidad&gt;[id]</strong> - Obtener un registro por ID</li>\n");
-        html.append("<li><strong>HELP</strong> - Mostrar esta ayuda</li>\n");
-        html.append("</ul>\n");
+        html.append("<table>\n");
+        html.append("<thead>\n");
+        html.append("<tr>\n");
+        html.append("<th>Comando</th>\n");
+        html.append("<th>Descripción</th>\n");
+        html.append("<th>Ejemplo</th>\n");
+        html.append("</tr>\n");
+        html.append("</thead>\n");
+        html.append("<tbody>\n");
+        
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>📋 LISTAR&lt;entidad&gt;[*]</td>\n");
+        html.append("<td>Listar todos los registros de una entidad</td>\n");
+        html.append("<td><span class='example-code'>LISTARUSUARIOS[*]</span></td>\n");
+        html.append("</tr>\n");
+        
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>➕ CREATE&lt;entidad&gt;[params...]</td>\n");
+        html.append("<td>Crear un nuevo registro en la entidad especificada</td>\n");
+        html.append("<td><span class='example-code'>CREATEUSUARIOS[juan, perez, juan@mail.com, ...]</span></td>\n");
+        html.append("</tr>\n");
+        
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>✏️ UPDATE&lt;entidad&gt;[id, params...]</td>\n");
+        html.append("<td>Actualizar un registro existente por su ID</td>\n");
+        html.append("<td><span class='example-code'>UPDATEUSUARIOS[1, juan, lopez, ...]</span></td>\n");
+        html.append("</tr>\n");
+        
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>🗑️ DELETE&lt;entidad&gt;[id]</td>\n");
+        html.append("<td>Eliminar un registro por su ID</td>\n");
+        html.append("<td><span class='example-code'>DELETEUSUARIOS[1]</span></td>\n");
+        html.append("</tr>\n");
+        
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>🔍 GET&lt;entidad&gt;[id]</td>\n");
+        html.append("<td>Obtener un registro específico por su ID</td>\n");
+        html.append("<td><span class='example-code'>GETUSUARIOS[1]</span></td>\n");
+        html.append("</tr>\n");
+        
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>❓ HELP</td>\n");
+        html.append("<td>Mostrar esta ayuda con todos los comandos disponibles</td>\n");
+        html.append("<td><span class='example-code'>HELP</span></td>\n");
+        html.append("</tr>\n");
+        
+        html.append("</tbody>\n");
+        html.append("</table>\n");
 
         // Entidades disponibles
         html.append("<h2>🗂️ ENTIDADES DISPONIBLES</h2>\n");
@@ -192,19 +239,53 @@ public class CommandHelpHTML {
 
         // Comandos CREATE
         html.append("<h2>➕ COMANDOS CREATE</h2>\n");
+        html.append("<table>\n");
+        html.append("<thead>\n");
+        html.append("<tr>\n");
+        html.append("<th>Entidad</th>\n");
+        html.append("<th>Descripción</th>\n");
+        html.append("<th>Parámetros</th>\n");
+        html.append("<th>Ejemplo</th>\n");
+        html.append("</tr>\n");
+        html.append("</thead>\n");
+        html.append("<tbody>\n");
         for (CommandExample cmd : COMMANDS) {
             if (cmd.operation.equals("CREATE")) {
-                html.append(formatCommandHTML(cmd));
+                html.append("<tr>\n");
+                html.append("<td class='entity-name'>").append(cmd.entity).append("</td>\n");
+                html.append("<td>").append(cmd.description).append("</td>\n");
+                html.append("<td>").append(cmd.parameters).append("</td>\n");
+                html.append("<td><span class='example-code'>").append(cmd.example).append("</span></td>\n");
+                html.append("</tr>\n");
             }
         }
+        html.append("</tbody>\n");
+        html.append("</table>\n");
 
         // Comandos UPDATE
         html.append("<h2>✏️ COMANDOS UPDATE</h2>\n");
+        html.append("<table>\n");
+        html.append("<thead>\n");
+        html.append("<tr>\n");
+        html.append("<th>Entidad</th>\n");
+        html.append("<th>Descripción</th>\n");
+        html.append("<th>Parámetros</th>\n");
+        html.append("<th>Ejemplo</th>\n");
+        html.append("</tr>\n");
+        html.append("</thead>\n");
+        html.append("<tbody>\n");
         for (CommandExample cmd : COMMANDS) {
             if (cmd.operation.equals("UPDATE")) {
-                html.append(formatCommandHTML(cmd));
+                html.append("<tr>\n");
+                html.append("<td class='entity-name'>").append(cmd.entity).append("</td>\n");
+                html.append("<td>").append(cmd.description).append("</td>\n");
+                html.append("<td>").append(cmd.parameters).append("</td>\n");
+                html.append("<td><span class='example-code'>").append(cmd.example).append("</span></td>\n");
+                html.append("</tr>\n");
             }
         }
+        html.append("</tbody>\n");
+        html.append("</table>\n");
 
         html.append("</div>\n</body>\n</html>");
 
@@ -214,93 +295,107 @@ public class CommandHelpHTML {
     private static String obtenerComandosReportesHTML() {
         StringBuilder html = new StringBuilder();
 
+        html.append("<table>\n");
+        html.append("<thead>\n");
+        html.append("<tr>\n");
+        html.append("<th>Comando</th>\n");
+        html.append("<th>Descripción</th>\n");
+        html.append("<th>Parámetros</th>\n");
+        html.append("<th>Ejemplo</th>\n");
+        html.append("</tr>\n");
+        html.append("</thead>\n");
+        html.append("<tbody>\n");
+
         // Dashboard
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>📈 REPORTEDASHBOARD</div>\n");
-        html.append("<div class='command-desc'>Dashboard general del mes actual con todas las estadísticas</div>\n");
-        html.append("<div class='command-params'>Parámetros: Ninguno</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTEDASHBOARD</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>📈 REPORTEDASHBOARD</td>\n");
+        html.append("<td>Dashboard general del mes actual con todas las estadísticas</td>\n");
+        html.append("<td>Ninguno</td>\n");
+        html.append("<td><span class='example-code'>REPORTEDASHBOARD</span></td>\n");
+        html.append("</tr>\n");
 
         // Ingresos
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>💰 REPORTEINGRESOS</div>\n");
-        html.append("<div class='command-desc'>Obtiene los ingresos totales de un mes específico</div>\n");
-        html.append("<div class='command-params'>Parámetros: año, mes</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTEINGRESOS[2025, 10]</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>💰 REPORTEINGRESOS</td>\n");
+        html.append("<td>Obtiene los ingresos totales de un mes específico</td>\n");
+        html.append("<td>año, mes</td>\n");
+        html.append("<td><span class='example-code'>REPORTEINGRESOS[2025, 10]</span></td>\n");
+        html.append("</tr>\n");
 
         // Ranking Barberos
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>🏆 REPORTERANKINGBARBEROS</div>\n");
-        html.append("<div class='command-desc'>Ranking de barberos por ingresos en un período</div>\n");
-        html.append("<div class='command-params'>Parámetros: fecha_inicio (YYYY-MM-DD), fecha_fin (YYYY-MM-DD)</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTERANKINGBARBEROS[2025-10-01, 2025-10-31]</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>🏆 REPORTERANKINGBARBEROS</td>\n");
+        html.append("<td>Ranking de barberos por ingresos en un período</td>\n");
+        html.append("<td>fecha_inicio (YYYY-MM-DD), fecha_fin (YYYY-MM-DD)</td>\n");
+        html.append("<td><span class='example-code'>REPORTERANKINGBARBEROS[2025-10-01, 2025-10-31]</span></td>\n");
+        html.append("</tr>\n");
 
         // Servicios Populares
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>⭐ REPORTESERVICIOSPOPULARES</div>\n");
-        html.append("<div class='command-desc'>Top de servicios más solicitados en un período</div>\n");
-        html.append("<div class='command-params'>Parámetros: fecha_inicio, fecha_fin, limite</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTESERVICIOSPOPULARES[2025-01-01, 2025-12-31, 5]</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>⭐ REPORTESERVICIOSPOPULARES</td>\n");
+        html.append("<td>Top de servicios más solicitados en un período</td>\n");
+        html.append("<td>fecha_inicio, fecha_fin, limite</td>\n");
+        html.append("<td><span class='example-code'>REPORTESERVICIOSPOPULARES[2025-01-01, 2025-12-31, 5]</span></td>\n");
+        html.append("</tr>\n");
 
         // Clientes Frecuentes
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>👥 REPORTECLIENTESFRECUENTES</div>\n");
-        html.append("<div class='command-desc'>Top de clientes con más visitas en un período</div>\n");
-        html.append("<div class='command-params'>Parámetros: fecha_inicio, fecha_fin, limite</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTECLIENTESFRECUENTES[2025-01-01, 2025-12-31, 10]</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>👥 REPORTECLIENTESFRECUENTES</td>\n");
+        html.append("<td>Top de clientes con más visitas en un período</td>\n");
+        html.append("<td>fecha_inicio, fecha_fin, limite</td>\n");
+        html.append("<td><span class='example-code'>REPORTECLIENTESFRECUENTES[2025-01-01, 2025-12-31, 10]</span></td>\n");
+        html.append("</tr>\n");
 
         // Distribución Estados
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>📊 REPORTEDISTRIBUCIONESTADOS</div>\n");
-        html.append("<div class='command-desc'>Distribución de reservas por estado en un período</div>\n");
-        html.append("<div class='command-params'>Parámetros: fecha_inicio, fecha_fin</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTEDISTRIBUCIONESTADOS[2025-07-01, 2025-09-30]</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>📊 REPORTEDISTRIBUCIONESTADOS</td>\n");
+        html.append("<td>Distribución de reservas por estado en un período</td>\n");
+        html.append("<td>fecha_inicio, fecha_fin</td>\n");
+        html.append("<td><span class='example-code'>REPORTEDISTRIBUCIONESTADOS[2025-07-01, 2025-09-30]</span></td>\n");
+        html.append("</tr>\n");
 
         // Horas Pico
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>⏰ REPORTEHORASPICO</div>\n");
-        html.append("<div class='command-desc'>Horas del día con más actividad en un período</div>\n");
-        html.append("<div class='command-params'>Parámetros: fecha_inicio, fecha_fin</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTEHORASPICO[2025-10-01, 2025-10-31]</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>⏰ REPORTEHORASPICO</td>\n");
+        html.append("<td>Horas del día con más actividad en un período</td>\n");
+        html.append("<td>fecha_inicio, fecha_fin</td>\n");
+        html.append("<td><span class='example-code'>REPORTEHORASPICO[2025-10-01, 2025-10-31]</span></td>\n");
+        html.append("</tr>\n");
 
         // Días Ocupados
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>📅 REPORTEDIASOCUPADOS</div>\n");
-        html.append("<div class='command-desc'>Días de la semana con más reservas en un período</div>\n");
-        html.append("<div class='command-params'>Parámetros: fecha_inicio, fecha_fin</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTEDIASOCUPADOS[2025-10-01, 2025-10-31]</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>📅 REPORTEDIASOCUPADOS</td>\n");
+        html.append("<td>Días de la semana con más reservas en un período</td>\n");
+        html.append("<td>fecha_inicio, fecha_fin</td>\n");
+        html.append("<td><span class='example-code'>REPORTEDIASOCUPADOS[2025-10-01, 2025-10-31]</span></td>\n");
+        html.append("</tr>\n");
 
         // Métodos de Pago
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>💳 REPORTEMETODOSPAGO</div>\n");
-        html.append("<div class='command-desc'>Distribución de pagos por método en un período</div>\n");
-        html.append("<div class='command-params'>Parámetros: fecha_inicio, fecha_fin</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTEMETODOSPAGO[2025-01-01, 2025-12-31]</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>💳 REPORTEMETODOSPAGO</td>\n");
+        html.append("<td>Distribución de pagos por método en un período</td>\n");
+        html.append("<td>fecha_inicio, fecha_fin</td>\n");
+        html.append("<td><span class='example-code'>REPORTEMETODOSPAGO[2025-01-01, 2025-12-31]</span></td>\n");
+        html.append("</tr>\n");
 
         // Consumo Productos
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>📦 REPORTECONSUMOPRODUCTOS</div>\n");
-        html.append("<div class='command-desc'>Consumo de productos en servicios durante un período</div>\n");
-        html.append("<div class='command-params'>Parámetros: fecha_inicio, fecha_fin</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTECONSUMOPRODUCTOS[2025-10-01, 2025-10-31]</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>📦 REPORTECONSUMOPRODUCTOS</td>\n");
+        html.append("<td>Consumo de productos en servicios durante un período</td>\n");
+        html.append("<td>fecha_inicio, fecha_fin</td>\n");
+        html.append("<td><span class='example-code'>REPORTECONSUMOPRODUCTOS[2025-10-01, 2025-10-31]</span></td>\n");
+        html.append("</tr>\n");
 
         // Estadísticas Barbero
-        html.append("<div class='report-box'>\n");
-        html.append("<div class='command-title'>👨‍💼 REPORTEESTADISTICASBARBERO</div>\n");
-        html.append("<div class='command-desc'>Estadísticas detalladas de un barbero específico</div>\n");
-        html.append("<div class='command-params'>Parámetros: id_barbero, fecha_inicio, fecha_fin</div>\n");
-        html.append("<div class='command-example'>Ejemplo: REPORTEESTADISTICASBARBERO[1, 2025-10-01, 2025-10-31]</div>\n");
-        html.append("</div>\n");
+        html.append("<tr>\n");
+        html.append("<td class='entity-name'>👨‍💼 REPORTEESTADISTICASBARBERO</td>\n");
+        html.append("<td>Estadísticas detalladas de un barbero específico</td>\n");
+        html.append("<td>id_barbero, fecha_inicio, fecha_fin</td>\n");
+        html.append("<td><span class='example-code'>REPORTEESTADISTICASBARBERO[1, 2025-10-01, 2025-10-31]</span></td>\n");
+        html.append("</tr>\n");
+
+        html.append("</tbody>\n");
+        html.append("</table>\n");
 
         return html.toString();
     }

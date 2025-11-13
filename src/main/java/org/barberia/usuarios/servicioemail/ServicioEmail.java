@@ -69,7 +69,7 @@ public class ServicioEmail {
 
         // Programar el apagado automático después de 15 segundos
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.schedule(servicioEmail::detener, 120, TimeUnit.SECONDS);
+        scheduler.schedule(servicioEmail::detener, 320, TimeUnit.SECONDS);
         while (servicioEmail.conectado) {
             servicioEmail.revisarCorreos();
 
@@ -86,6 +86,7 @@ public class ServicioEmail {
         String subject = extraerSubject(correo);
         String remitente = extraerRemitente(correo);
         if (subject != null && remitente != null) {
+            System.out.println("S : Procesando correo con subject: " + subject + " de: " + remitente);
             String respuesta = procesarCorreo(subject);
             if (!respuesta.isEmpty()) {
                 System.out.println(respuesta);

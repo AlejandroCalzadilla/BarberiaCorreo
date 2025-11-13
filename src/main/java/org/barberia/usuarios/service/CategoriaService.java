@@ -47,7 +47,9 @@ public class CategoriaService {
         c.nombre = nombre;
         c.descripcion = descripcion;
         validator.validar(c);
-        return "categoria actualizada: " + repo.save(c).toString();
+        Categoria cat = repo.save(c);
+        System.out.println(cat);
+        return  cat.toString();
     }
 
     public String  deleteById(Integer id) {

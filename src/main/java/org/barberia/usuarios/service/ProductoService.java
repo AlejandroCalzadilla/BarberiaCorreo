@@ -21,9 +21,9 @@ public class ProductoService {
         this.validator = validator;
     }
 
-    public String getAllAsTable() {
+    public List<Producto> getAllAsTable() {
         List<Producto> list = repo.findAll();
-        return ProductoMapper.obtenerTodosTable(list);
+        return list ;
     }
 
     public String getByIdAsTable(Integer id) {

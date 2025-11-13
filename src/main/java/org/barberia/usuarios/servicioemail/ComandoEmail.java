@@ -1,5 +1,6 @@
 package org.barberia.usuarios.servicioemail;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -94,11 +95,11 @@ public class ComandoEmail {
     private ServicioValidator servicioValidator = new ServicioValidator();
     private ServicioService servicioService = new ServicioService(servicioRepository, servicioValidator);
 
-     private ServicioProductoRepository servicioProductoRepository = new JdbServicioProductoRepository();
-     private ServicioProductoValidator servicioProductoValidator = new ServicioProductoValidator();
-     private ServicioProductoService servicioProductoService = new ServicioProductoService(servicioProductoRepository, servicioProductoValidator);
+    private ServicioProductoRepository servicioProductoRepository = new JdbServicioProductoRepository();
+    private ServicioProductoValidator servicioProductoValidator = new ServicioProductoValidator();
+    private ServicioProductoService servicioProductoService = new ServicioProductoService(servicioProductoRepository,
+            servicioProductoValidator);
 
-   
     private ReservaRepository reservaRepository = new JdbcReservaRepository();
     private PagoRepository pagoRepository = new JdbcPagoRepository();
     private PagoValidator pagoValidator = new PagoValidator();
@@ -106,35 +107,41 @@ public class ComandoEmail {
     private ServicioProductoRepository reservaProductoRepository = new JdbServicioProductoRepository();
     private ReservaValidator reservaValidator = new ReservaValidator();
     private ReservaService reservaService = new ReservaService(reservaRepository, reservaValidator, pagoRepository,
-             servicioRepository,barberoRepository,usuarioRepository,horarioRepository, servicioProductoRepository,productoRepository );
+            servicioRepository, barberoRepository, usuarioRepository, horarioRepository, servicioProductoRepository,
+            productoRepository);
 
-
-   
-     private ReporteService reporteService = new ReporteService();
+    private ReporteService reporteService = new ReporteService();
 
     // private CommandHelp commandHelp = new CommandHelp();
     public String evaluarYEjecutar(String subject) throws SQLException {
-        if (Objects.equals(subject, "HELP")) {
-            return CommandHelp.obtenerComandosDisponibles();
-        }
         
+        // Decodificar el subject si viene en formato MIME encoded-word (=?UTF-8?Q?...?=)
+        subject = decodeMimeSubject(subject);
+        
+        System.out.println("Subject decodificado: " + subject);
+        
+        if (Objects.equals(subject, "HELP")) {
+            // return CommandHelp.obtenerComandosDisponibles();
+            return CommandHelpHTML.obtenerComandosDisponibles();
+        }
+
         // Verificar si es un comando de reporte DASHBOARD
         if (subject.equals("REPORTEDASHBOARD")) {
-            return ejecutarReporteDashboard();
+            return wrapInHTML(ejecutarReporteDashboard());
         }
-        
+
         String respuestaConsulta;
 
-        // Definir patrones para cada operación CRUD
-        Pattern listarPatron = Pattern.compile("^LISTAR(\\w+)\\[\\*\\]$"); // Ej: LISTARCLIENTES[*]
-        Pattern crearPatron = Pattern.compile("^CREATE(\\w+)\\[(.+)]$"); // Ej: CREATECLIENTES[nombre, apellido, otros]
-        Pattern actualizarPatron = Pattern.compile("^UPDATE(\\w+)\\[(.+)]$"); // Ej: UPDATECLIENTES[param1, param2]
-        Pattern eliminarPatron = Pattern.compile("^DELETE(\\w+)\\[(.+)]$"); // Ej: DELETECLIENTES[id]
-        Pattern getPatron = Pattern.compile("^GET(\\w+)\\[(\\d+)]$"); // Ej: GETMEDICAMENTOS[2]
-        Pattern reportePatron = Pattern.compile("^REPORTE(\\w+)\\[(.+)]$"); // Ej: REPORTEINGRESOS[2025, 10]
+        // Definir patrones para cada operación CRUD (usando [^\\[\\]] para aceptar cualquier caracter excepto corchetes)
+        Pattern listarPatron = Pattern.compile("^LISTAR([A-Z]+)\\[\\*\\]$"); // Ej: LISTARCLIENTES[*]
+        Pattern crearPatron = Pattern.compile("^CREATE([A-Z]+)\\[(.+)\\]$"); // Ej: CREATECLIENTES[nombre, apellido, otros]
+        Pattern actualizarPatron = Pattern.compile("^UPDATE([A-Z]+)\\[(.+)\\]$"); // Ej: UPDATECLIENTES[param1, param2]
+        Pattern eliminarPatron = Pattern.compile("^DELETE([A-Z]+)\\[(.+)\\]$"); // Ej: DELETECLIENTES[id]
+        Pattern getPatron = Pattern.compile("^GET([A-Z]+)\\[(\\d+)\\]$"); // Ej: GETMEDICAMENTOS[2]
+        Pattern reportePatron = Pattern.compile("^REPORTE([A-Z]+)\\[(.+)\\]$"); // Ej: REPORTEINGRESOS[2025, 10]
 
         Matcher matcher;
-
+        System.out.println("Evaluando subject: " + subject);   
         // Evaluar cada patrón
         if ((matcher = listarPatron.matcher(subject)).matches()) {
             String entidad = matcher.group(1);
@@ -144,10 +151,10 @@ public class ComandoEmail {
             String parametros = matcher.group(2);
             respuestaConsulta = ejecutarConsultaCrear(entidad, parametros);
         } else if ((matcher = actualizarPatron.matcher(subject)).matches()) {
+            System.out.println("Patron de actualizacion coincide");
             String entidad = matcher.group(1);
             String parametros = matcher.group(2);
             respuestaConsulta = ejecutarConsultaActualizar(entidad, parametros);
-            respuestaConsulta = "";
         } else if ((matcher = eliminarPatron.matcher(subject)).matches()) {
             String entidad = matcher.group(1);
             String id = matcher.group(2);
@@ -164,7 +171,150 @@ public class ComandoEmail {
             respuestaConsulta = "Comando no reconocido.";
         }
 
-        return respuestaConsulta;
+        System.out.println("Respuesta consulta: " + respuestaConsulta);
+        return wrapInHTML(respuestaConsulta);
+    }
+
+    /**
+     * Envuelve el contenido de texto en una estructura HTML completa
+     */
+    private String wrapInHTML(String content) {
+        // Si el contenido ya es HTML completo, devolverlo tal cual
+        if (content != null && content.trim().toLowerCase().startsWith("<!doctype html>")) {
+            return content;
+        }
+
+        StringBuilder html = new StringBuilder();
+
+        html.append("<!DOCTYPE html>\n");
+        html.append("<html>\n<head>\n");
+        html.append("<meta charset='UTF-8'>\n");
+        html.append("<style>\n");
+        html.append("body { font-family: 'Courier New', monospace; background-color: #f4f4f4; padding: 20px; }\n");
+        html.append(
+                ".container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }\n");
+        html.append(
+                "pre { background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #3498db; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }\n");
+        html.append("h1, h2, h3 { color: #2c3e50; }\n");
+        html.append(".success { color: #27ae60; font-weight: bold; }\n");
+        html.append(".error { color: #e74c3c; font-weight: bold; }\n");
+        html.append(".info { color: #3498db; font-weight: bold; }\n");
+        html.append("</style>\n");
+        html.append("</head>\n<body>\n");
+        html.append("<div class='container'>\n");
+        html.append("<pre>");
+        html.append(escapeHTML(content));
+        html.append("</pre>\n");
+        html.append("</div>\n</body>\n</html>");
+
+        return html.toString();
+    }
+
+    /**
+     * Escapa caracteres especiales HTML
+     */
+    private String escapeHTML(String text) {
+        if (text == null)
+            return "";
+        return text
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+
+    /**
+     * Decodifica un subject que viene en formato MIME encoded-word
+     * Ejemplo: =?UTF-8?Q?UPDATECATEGORIAS=5B1=2Chasf=C3=B1=2Cdasdsads=5D?=
+     * Se convierte en: UPDATECATEGORIAS[1,hasfñ,dasdsads]
+     */
+    private String decodeMimeSubject(String subject) {
+        if (subject == null || !subject.contains("=?")) {
+            return subject;
+        }
+        
+        try {
+            // Patrón para detectar formato MIME encoded-word: =?charset?encoding?encoded-text?=
+            Pattern pattern = Pattern.compile("=\\?([^?]+)\\?([QB])\\?([^?]+)\\?=", Pattern.CASE_INSENSITIVE);
+            Matcher matcher = pattern.matcher(subject);
+            
+            StringBuffer result = new StringBuffer();
+            while (matcher.find()) {
+                String charset = matcher.group(1);
+                String encoding = matcher.group(2).toUpperCase();
+                String encodedText = matcher.group(3);
+                
+                String decoded;
+                if (encoding.equals("Q")) {
+                    // Quoted-Printable decoding
+                    decoded = decodeQuotedPrintable(encodedText);
+                } else if (encoding.equals("B")) {
+                    // Base64 decoding
+                    decoded = new String(java.util.Base64.getDecoder().decode(encodedText), charset);
+                } else {
+                    decoded = encodedText;
+                }
+                
+                matcher.appendReplacement(result, Matcher.quoteReplacement(decoded));
+            }
+            matcher.appendTail(result);
+            
+            return result.toString();
+        } catch (Exception e) {
+            System.err.println("Error decodificando subject: " + e.getMessage());
+            return subject;
+        }
+    }
+    
+    /**
+     * Decodifica texto en formato Quoted-Printable
+     * Ejemplo: =5B se convierte en [, =C3=B1 se convierte en ñ
+     */
+    private String decodeQuotedPrintable(String text) {
+        try {
+            StringBuilder result = new StringBuilder();
+            int i = 0;
+            
+            while (i < text.length()) {
+                char c = text.charAt(i);
+                
+                if (c == '=') {
+                    if (i + 2 < text.length()) {
+                        String hex = text.substring(i + 1, i + 3);
+                        try {
+                            int value = Integer.parseInt(hex, 16);
+                            result.append((char) value);
+                            i += 3;
+                        } catch (NumberFormatException e) {
+                            result.append(c);
+                            i++;
+                        }
+                    } else {
+                        result.append(c);
+                        i++;
+                    }
+                } else if (c == '_') {
+                    // En Quoted-Printable, _ representa espacio
+                    result.append(' ');
+                    i++;
+                } else {
+                    result.append(c);
+                    i++;
+                }
+            }
+            
+            // Convertir bytes a String UTF-8
+            byte[] bytes = new byte[result.length()];
+            for (int j = 0; j < result.length(); j++) {
+                bytes[j] = (byte) result.charAt(j);
+            }
+            return new String(bytes, "UTF-8");
+            
+        } catch (Exception e) {
+            System.err.println("Error en decodeQuotedPrintable: " + e.getMessage());
+            return text;
+        }
     }
 
     // Métodos para ejecutar consultas CRUD simuladas
@@ -175,7 +325,8 @@ public class ComandoEmail {
                 case "PRODUCTOS" -> {
                     ProductoService productoService = new ProductoService(productoRepository, categoriaRepository,
                             productoValidator);
-                    respuesta = productoService.getAllAsTable();
+                    respuesta = org.barberia.usuarios.mapper.ProductoMapper
+                            .obtenerTodosTable(productoService.getAllAsTable());
                 }
                 case "CATEGORIAS" -> {
                     respuesta = categoriaService.getAllAsTable();
@@ -312,23 +463,25 @@ public class ComandoEmail {
                             new BigDecimal(params[3]),
                             params[4]).toString();
                 }
-                /* case "RESERVAS" -> {
-                    if (params.length != 5) {
-                        throw new IllegalArgumentException("Número de parámetros incorrecto");
-                    }
-
-                    respuesta = reservaService.createConTransaccion(
-                            Integer.parseInt(params[0]),
-                            Integer.parseInt(params[1]),
-                            Integer.parseInt(params[2]),
-                            LocalDate.parse(params[3]),
-                            LocalTime.parse(params[4]),
-                            LocalTime.parse(params[5]),
-                            params[6],
-                            params[7],
-                            params[8],
-                            params[9]).toString();
-                } */
+                /*
+                 * case "RESERVAS" -> {
+                 * if (params.length != 5) {
+                 * throw new IllegalArgumentException("Número de parámetros incorrecto");
+                 * }
+                 * 
+                 * respuesta = reservaService.createConTransaccion(
+                 * Integer.parseInt(params[0]),
+                 * Integer.parseInt(params[1]),
+                 * Integer.parseInt(params[2]),
+                 * LocalDate.parse(params[3]),
+                 * LocalTime.parse(params[4]),
+                 * LocalTime.parse(params[5]),
+                 * params[6],
+                 * params[7],
+                 * params[8],
+                 * params[9]).toString();
+                 * }
+                 */
 
                 default -> respuesta = "Entidad no encontrada";
             }
@@ -351,56 +504,54 @@ public class ComandoEmail {
                     if (params.length != 10) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
-                    respuesta=  this.productoService.update(
-                        Integer.parseInt(params[0]),
-                        Integer.parseInt(params[1]),
-                        params[2],
-                        params[3],
-                        params[4],
-                        new BigDecimal(params[5]),
-                        new BigDecimal(params[6]),
-                        Integer.parseInt(params[7]),
-                        Integer.parseInt(params[8]),
-                        params[9],
-                        params[10]).toString();
+                    respuesta = this.productoService.update(
+                            Integer.parseInt(params[0]),
+                            Integer.parseInt(params[1]),
+                            params[2],
+                            params[3],
+                            params[4],
+                            new BigDecimal(params[5]),
+                            new BigDecimal(params[6]),
+                            Integer.parseInt(params[7]),
+                            Integer.parseInt(params[8]),
+                            params[9],
+                            params[10]).toString();
                 }
                 case "CATEGORIAS" -> {
                     if (params.length != 3) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
-                    respuesta=  categoriaService.update(
-                      Integer.parseInt(params[0]),
-                      params[1],
-                      params[2]
-                    );   
-                    
+                    respuesta = categoriaService.update(
+                            Integer.parseInt(params[0]),
+                            params[1],
+                            params[2]);
+
                 }
-                case "USUARIOS "-> {
-  
-                     if (params.length != 8) {
+                case "USUARIOS" -> {
+
+                    if (params.length != 8) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
                     respuesta = usuarioService.update(
-                      Integer.parseInt(params[0]),    
-                      params[1],
-                      params[2],
-                      params[3],
-                      params[4],
-                      params[5],
-                      params[6],
-                      params[7]
-                      );
+                            Integer.parseInt(params[0]),
+                            params[1],
+                            params[2],
+                            params[3],
+                            params[4],
+                            params[5],
+                            params[6],
+                            params[7]);
 
                 }
                 case "ClIENTES" -> {
-                     if (params.length != 4) {
+                    if (params.length != 4) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
                     respuesta = clienteService.update(
-                        Integer.parseInt(params[0]),
-                        Integer.parseInt(params[1]),
-                        params[2],
-                        params[3]
+                            Integer.parseInt(params[0]),
+                            Integer.parseInt(params[1]),
+                            params[2],
+                            params[3]
 
                     );
 
@@ -410,99 +561,102 @@ public class ComandoEmail {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
                     respuesta = clienteService.update(
-                        Integer.parseInt(params[0]),
-                        Integer.parseInt(params[1]),
-                        params[2],
-                        params[3]
+                            Integer.parseInt(params[0]),
+                            Integer.parseInt(params[1]),
+                            params[2],
+                            params[3]
 
                     );
                 }
 
-                 case "HORARIOS" -> {
-                   if (params.length != 4) {
+                case "HORARIOS" -> {
+                    if (params.length != 4) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
                     respuesta = horarioService.update(
-                        Integer.parseInt(params[0]),
-                        Integer.parseInt(params[1]),
-                        Integer.parseInt(params[2]),
-                        params[3],
-                        LocalTime.parse(params[4]),
-                        LocalTime.parse(params[5])
-                    );
+                            Integer.parseInt(params[0]),
+                            Integer.parseInt(params[1]),
+                            Integer.parseInt(params[2]),
+                            params[3],
+                            LocalTime.parse(params[4]),
+                            LocalTime.parse(params[5]));
 
-                } 
+                }
                 case "SERVICIOS" -> {
                     if (params.length != 6) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
                     respuesta = servicioService.update(
-                        Integer.parseInt(params[0]),
-                        params[1],
-                        params[2],
-                        Integer.parseInt(params[3]),
-                        new BigDecimal(params[4]),
-                        params[5]
-                    );
+                            Integer.parseInt(params[0]),
+                            params[1],
+                            params[2],
+                            Integer.parseInt(params[3]),
+                            new BigDecimal(params[4]),
+                            params[5]);
+                    System.out.println(respuesta + "llega del update");
 
                 }
 
                 case "SERVICIOPRODUCTOS" -> {
 
-                    //"id_servicio, id_producto, cantidad"
+                    // "id_servicio, id_producto, cantidad"
                     // 1, 2, 3
 
-                    respuesta = servicioProductoService.update (
-                        Integer.parseInt(params[0]),
-                        Integer.parseInt(params[1]),
-                        Integer.parseInt(params[2])
-                    ).toString();
+                    respuesta = servicioProductoService.update(
+                            Integer.parseInt(params[0]),
+                            Integer.parseInt(params[1]),
+                            Integer.parseInt(params[2])).toString();
 
                 }
-/* 
-                case "RESERVAS" -> {
+                /*
+                 * case "RESERVAS" -> {
+                 * 
+                 * //"id_cliente ,id_barbero ,id_servicio ,fecha_reserva ,hora_inicio, hora_fin,notas,opcional estado(confirmada, cancelada,completada,no_asistio) "
+                 * ,
+                 * 
+                 * Reserva r = new Reserva();
+                 * r.id_reserva = Integer.parseInt(params[0]);
+                 * r.id_cliente = Integer.parseInt(params[1]);
+                 * r.id_barbero = Integer.parseInt(params[2]);
+                 * r.id_servicio = Integer.parseInt(params[3]);
+                 * r.fecha_reserva = LocalDate.parse(params[4]);
+                 * r.hora_inicio = LocalTime.parse(params[5]);
+                 * r.hora_fin = LocalTime.parse(params[6]);
+                 * r.notas = params[7];
+                 * r.estado = EstadoReserva.parse(params[8]);
+                 * 
+                 * 
+                 * respuesta = reservaService.updateConTransaccion(
+                 * Integer.parseInt(params[0]),
+                 * r
+                 * ).toString();
+                 * 
+                 * }
+                 */
+                /*
+                 * case "PAGOS" -> {
+                 * if (params.length != 5) {
+                 * throw new IllegalArgumentException("Número de parámetros incorrecto");
+                 * }
+                 * 
+                 * Pago p = new Pago();
+                 * p.id_pago = Integer.parseInt(params[0]);
+                 * p.id_reserva = Integer.parseInt(params[1]);
+                 * p.metodo_pago = MetodoPago.parse(params[2]);
+                 * p.tipo_pago = TipoPago.parse(params[3]);
+                 * p.notas = params[4];
+                 * 
+                 * respuesta = pagoService.updateReserva (
+                 * p,
+                 * Integer.parseInt(params[0])
+                 * );
+                 * 
+                 * }
+                 */
 
-                    //"id_cliente ,id_barbero ,id_servicio ,fecha_reserva ,hora_inicio, hora_fin,notas,opcional estado(confirmada, cancelada,completada,no_asistio) ",
-                                
-                    Reserva r = new Reserva();
-                    r.id_reserva = Integer.parseInt(params[0]);
-                    r.id_cliente = Integer.parseInt(params[1]);
-                    r.id_barbero = Integer.parseInt(params[2]);
-                    r.id_servicio = Integer.parseInt(params[3]);
-                    r.fecha_reserva = LocalDate.parse(params[4]);
-                    r.hora_inicio = LocalTime.parse(params[5]);
-                    r.hora_fin = LocalTime.parse(params[6]);
-                    r.notas = params[7];
-                    r.estado = EstadoReserva.parse(params[8]);
-
-                    
-                    respuesta = reservaService.updateConTransaccion(
-                        Integer.parseInt(params[0]),
-                       r
-                    ).toString();
-
-                } */
-               /*  case "PAGOS" -> {
-                    if (params.length != 5) {
-                        throw new IllegalArgumentException("Número de parámetros incorrecto");
-                    }
-
-                    Pago p = new Pago();
-                    p.id_pago = Integer.parseInt(params[0]);
-                    p.id_reserva = Integer.parseInt(params[1]);
-                    p.metodo_pago = MetodoPago.parse(params[2]);
-                    p.tipo_pago = TipoPago.parse(params[3]);
-                    p.notas = params[4];
-
-                    respuesta = pagoService.updateReserva (
-                        p,
-                        Integer.parseInt(params[0])
-                    );
-
-                } */
-                
                 default -> respuesta = "Entidad no encontrada";
             }
+            System.out.println("sale de la funcion : " + respuesta);
             return respuesta;
         } catch (Exception e) {
             return "Error al actualizar " + entidad + ": " + e.getMessage();
@@ -519,7 +673,7 @@ public class ComandoEmail {
             switch (entidad) {
                 case "USUARIOS" -> {
 
-                    respuesta = this.usuarioService.delete(entityId);
+                    respuesta = this.usuarioService.toggleActive(entityId);
                 }
                 case "CLIENTES" -> {
                     respuesta = this.clienteService.delete(entityId);
@@ -533,7 +687,7 @@ public class ComandoEmail {
                     respuesta = this.horarioService.delete(entityId);
                 }
                 case "CATEGORIAS" -> {
-                    respuesta = this.categoriaService.deleteById(entityId);
+                    respuesta = this.categoriaService.toggleActive(entityId);
                 }
                 case "PRODCUTOS" -> {
                     respuesta = this.productoService.delete(entityId);
@@ -541,7 +695,7 @@ public class ComandoEmail {
                 case "SERVICIOS" -> {
                     respuesta = this.servicioService.delete(entityId);
                 }
-               
+
                 case "RESERVAS" -> {
                     respuesta = this.reservaService.delete(entityId);
                 }
@@ -903,10 +1057,11 @@ public class ComandoEmail {
         try {
             YearMonth mesActual = YearMonth.now();
             Map<String, Object> dashboard = reporteService.getDashboardGeneral(mesActual);
-            
+
             StringBuilder sb = new StringBuilder();
             sb.append("\n╔═══════════════════════════════════════════════════════════════════╗\n");
-            sb.append("║              DASHBOARD GENERAL - ").append(dashboard.get("periodo")).append("                          ║\n");
+            sb.append("║              DASHBOARD GENERAL - ").append(dashboard.get("periodo"))
+                    .append("                          ║\n");
             sb.append("╚═══════════════════════════════════════════════════════════════════╝\n\n");
 
             // Ingresos

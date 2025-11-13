@@ -9,6 +9,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class JdbcCategoriaRepository implements CategoriaRepository {
     @Override
@@ -65,13 +67,17 @@ public class JdbcCategoriaRepository implements CategoriaRepository {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            if (e.getMessage().contains("duplicate key value violates unique constraint")) {
+                throw new IllegalArgumentException(extraerMensajeDuplicado(e.getMessage()));
+            } else {
+                throw new RuntimeException("Error al crear la categoria: " + e.getMessage(), e);
+            }
         }
         return c;
     }
 
     private Categoria update(Categoria c) {
-        String sql = "UPDATE categoria SET nombre=?, descripcion=?, estado=?::estado_categoria, updated_at=now() WHERE id_categoria=? RETURNING created_at, updated_at";
+        String sql = "UPDATE categoria SET nombre=?, descripcion=?, estado=?::estado_categoria, updated_at=now() WHERE id_categoria=? RETURNING created_at, updated_at,estado";
         try (Connection con = Database.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, c.nombre);
@@ -84,10 +90,16 @@ public class JdbcCategoriaRepository implements CategoriaRepository {
                     Timestamp up = rs.getTimestamp("updated_at");
                     c.created_at = cr != null ? cr.toLocalDateTime() : null;
                     c.updated_at = up != null ? up.toLocalDateTime() : null;
+                    String estado = rs.getString("estado");
+                    if (estado != null) c.estado = EstadoCategoria.valueOf(estado);
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            if (e.getMessage().contains("duplicate key value violates unique constraint")) {
+                throw new IllegalArgumentException(extraerMensajeDuplicado(e.getMessage()));
+            } else {
+                throw new RuntimeException("Error al actualizar la categoria: " + e.getMessage(), e);
+            }
         }
         return c;
     }
@@ -156,5 +168,17 @@ public class JdbcCategoriaRepository implements CategoriaRepository {
         String estado = rs.getString("estado");
         if (estado != null) c.estado = EstadoCategoria.valueOf(estado);
         return c;
+    }
+
+    private String extraerMensajeDuplicado(String mensajeError) {
+        // Extraer el campo duplicado: Key (username)=(alegonz)
+        Pattern pattern = Pattern.compile("Key \\((.+?)\\)=\\((.+?)\\)");
+        Matcher matcher = pattern.matcher(mensajeError);
+        if (matcher.find()) {
+            String campo = matcher.group(1);
+            String valor = matcher.group(2);
+            return String.format("El %s '%s' ya está registrado ", campo, valor);
+        }
+        return "Ya existe un registro con los datos proporcionados";
     }
 }

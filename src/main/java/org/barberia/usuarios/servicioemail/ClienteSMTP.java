@@ -55,7 +55,13 @@ public class ClienteSMTP {
             enviarComando(salida, entrada, "DATA\r\n");
             
             salida.write("Subject: " + subject + "\r\n");
-            salida.write("Content-Type: text/plain; charset=utf-8\r\n");
+
+            if (mensaje.trim().toLowerCase().startsWith("<!doctype html>")) {
+                salida.write("Content-Type: text/html; charset=utf-8\r\n");
+            } else {
+                salida.write("Content-Type: text/plain; charset=utf-8\r\n");
+            }
+            
             salida.write("\r\n");
             salida.write(mensajeFormateado + "\r\n.\r\n");
             salida.flush();
