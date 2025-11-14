@@ -28,13 +28,13 @@ public enum DiaSemana {
             if (n.length() >= 3) {
                 String prefix = n.substring(0, 3);
                 switch (prefix) {
-                    case "lun": return lunes;
-                    case "mar": return martes;
-                    case "mie": return miercoles;
-                    case "jue": return jueves;
-                    case "vie": return viernes;
-                    case "sab": return sabado;
-                    case "dom": return domingo;
+                    case "lunes": return lunes;
+                    case "martes": return martes;
+                    case "miercoles": return miercoles;
+                    case "jueves": return jueves;
+                    case "viernes": return viernes;
+                    case "sabado": return sabado;
+                    case "domingo": return domingo;
                     default: break;
                 }
             }

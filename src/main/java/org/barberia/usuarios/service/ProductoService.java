@@ -2,6 +2,7 @@ package org.barberia.usuarios.service;
 
 import org.barberia.usuarios.domain.Categoria;
 import org.barberia.usuarios.domain.Producto;
+import org.barberia.usuarios.domain.enums.EstadoItem;
 import org.barberia.usuarios.mapper.ProductoMapper;
 import org.barberia.usuarios.repository.CategoriaRepository;
 import org.barberia.usuarios.repository.ProductoRepository;
@@ -31,11 +32,12 @@ public class ProductoService {
                 .orElse("No se encontró producto con id=" + id);
     }
 
-    public Producto create(int id_categoria, String codigo, String nombre, String descripcion,
+    public String create(int id_categoria, String codigo, String nombre, String descripcion,
             BigDecimal precio_compra, BigDecimal precio_venta,
             int stock_actual, int stock_minimo, String unidad_medida, String imagenurl) {
 
         Producto nuevoProducto = new Producto();
+        nuevoProducto.id_categoria = id_categoria;
         nuevoProducto.codigo = codigo;
         nuevoProducto.nombre = nombre;
         nuevoProducto.descripcion = descripcion;
@@ -43,6 +45,7 @@ public class ProductoService {
         nuevoProducto.precio_venta = precio_venta;
         nuevoProducto.stock_actual = stock_actual;
         nuevoProducto.stock_minimo = stock_minimo;
+        nuevoProducto.unidad_medida = unidad_medida;
         nuevoProducto.imagenurl = imagenurl;
 
         Categoria categoria = categoriaRepo.findById(id_categoria)
@@ -51,14 +54,17 @@ public class ProductoService {
             throw new RuntimeException("No se puede asignar un producto a una categoria inactiva");
         }
         validator.validar(nuevoProducto);
-        return repo.save(nuevoProducto);
+        Producto pro=  repo.save(nuevoProducto);
+        return "Producto con id=" + pro.id_producto + " creado " +
+                "\n" + getByIdAsTable(pro.id_producto);
     }
 
     public String update(Integer id,Integer idCategoria, String codigo, String nombre, String descripcion,
             BigDecimal precio_compra, BigDecimal precio_venta,
-            int stock_actual, int stock_minimo, String unidad_medida, String imagenurl) {
+            int stock_actual, int stock_minimo,  String imagenurl, String unidad_medida) {
 
         Producto p = new Producto();
+        p.id_producto = id;
         p.codigo = codigo;
         p.nombre = nombre;
         p.descripcion = descripcion;
@@ -83,9 +89,19 @@ public class ProductoService {
     }
 
     public String  delete(Integer id) {
-        repo.deleteById(id);
-        return "Producto con id=" + id + " eliminado (soft delete) " +
-                "\n" + getByIdAsTable(id);
+        Producto p = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto con id " + id + " no existe."));
+        if (p.estado == EstadoItem.activo) {
+            repo.deleteById(id);
+            return "Producto con id=" + id + "desactivado.";
+        }
+         else{
+            repo.activateById(id);
+            return "Producto con id=" + id + "activado.";
+         }
+         
     }
+
+    
     
 }

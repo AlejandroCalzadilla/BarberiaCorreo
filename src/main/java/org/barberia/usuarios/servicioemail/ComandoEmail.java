@@ -12,11 +12,16 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.barberia.usuarios.domain.Barbero;
 import org.barberia.usuarios.domain.Categoria;
+import org.barberia.usuarios.domain.Horario;
 import org.barberia.usuarios.domain.Pago;
 import org.barberia.usuarios.domain.Producto;
 import org.barberia.usuarios.domain.Reserva;
+import org.barberia.usuarios.domain.Servicio;
+import org.barberia.usuarios.domain.ServicioProducto;
 import org.barberia.usuarios.domain.Usuario;
+import org.barberia.usuarios.domain.enums.EstadoBarbero;
 import org.barberia.usuarios.domain.enums.EstadoReserva;
 import org.barberia.usuarios.domain.enums.MetodoPago;
 import org.barberia.usuarios.domain.enums.TipoPago;
@@ -114,12 +119,13 @@ public class ComandoEmail {
 
     // private CommandHelp commandHelp = new CommandHelp();
     public String evaluarYEjecutar(String subject) throws SQLException {
-        
-        // Decodificar el subject si viene en formato MIME encoded-word (=?UTF-8?Q?...?=)
+
+        // Decodificar el subject si viene en formato MIME encoded-word
+        // (=?UTF-8?Q?...?=)
         subject = decodeMimeSubject(subject);
-        
+
         System.out.println("Subject decodificado: " + subject);
-        
+
         if (Objects.equals(subject, "HELP")) {
             // return CommandHelp.obtenerComandosDisponibles();
             return CommandHelpHTML.obtenerComandosDisponibles();
@@ -132,16 +138,18 @@ public class ComandoEmail {
 
         String respuestaConsulta;
 
-        // Definir patrones para cada operación CRUD (usando [^\\[\\]] para aceptar cualquier caracter excepto corchetes)
+        // Definir patrones para cada operación CRUD (usando [^\\[\\]] para aceptar
+        // cualquier caracter excepto corchetes)
         Pattern listarPatron = Pattern.compile("^LISTAR([A-Z]+)\\[\\*\\]$"); // Ej: LISTARCLIENTES[*]
-        Pattern crearPatron = Pattern.compile("^CREATE([A-Z]+)\\[(.+)\\]$"); // Ej: CREATECLIENTES[nombre, apellido, otros]
+        Pattern crearPatron = Pattern.compile("^CREATE([A-Z]+)\\[(.+)\\]$"); // Ej: CREATECLIENTES[nombre, apellido,
+                                                                             // otros]
         Pattern actualizarPatron = Pattern.compile("^UPDATE([A-Z]+)\\[(.+)\\]$"); // Ej: UPDATECLIENTES[param1, param2]
         Pattern eliminarPatron = Pattern.compile("^DELETE([A-Z]+)\\[(.+)\\]$"); // Ej: DELETECLIENTES[id]
         Pattern getPatron = Pattern.compile("^GET([A-Z]+)\\[(\\d+)\\]$"); // Ej: GETMEDICAMENTOS[2]
         Pattern reportePatron = Pattern.compile("^REPORTE([A-Z]+)\\[(.+)\\]$"); // Ej: REPORTEINGRESOS[2025, 10]
 
         Matcher matcher;
-        System.out.println("Evaluando subject: " + subject);   
+        System.out.println("Evaluando subject: " + subject);
         // Evaluar cada patrón
         if ((matcher = listarPatron.matcher(subject)).matches()) {
             String entidad = matcher.group(1);
@@ -233,18 +241,19 @@ public class ComandoEmail {
         if (subject == null || !subject.contains("=?")) {
             return subject;
         }
-        
+
         try {
-            // Patrón para detectar formato MIME encoded-word: =?charset?encoding?encoded-text?=
+            // Patrón para detectar formato MIME encoded-word:
+            // =?charset?encoding?encoded-text?=
             Pattern pattern = Pattern.compile("=\\?([^?]+)\\?([QB])\\?([^?]+)\\?=", Pattern.CASE_INSENSITIVE);
             Matcher matcher = pattern.matcher(subject);
-            
+
             StringBuffer result = new StringBuffer();
             while (matcher.find()) {
                 String charset = matcher.group(1);
                 String encoding = matcher.group(2).toUpperCase();
                 String encodedText = matcher.group(3);
-                
+
                 String decoded;
                 if (encoding.equals("Q")) {
                     // Quoted-Printable decoding
@@ -255,18 +264,18 @@ public class ComandoEmail {
                 } else {
                     decoded = encodedText;
                 }
-                
+
                 matcher.appendReplacement(result, Matcher.quoteReplacement(decoded));
             }
             matcher.appendTail(result);
-            
+
             return result.toString();
         } catch (Exception e) {
             System.err.println("Error decodificando subject: " + e.getMessage());
             return subject;
         }
     }
-    
+
     /**
      * Decodifica texto en formato Quoted-Printable
      * Ejemplo: =5B se convierte en [, =C3=B1 se convierte en ñ
@@ -275,10 +284,10 @@ public class ComandoEmail {
         try {
             StringBuilder result = new StringBuilder();
             int i = 0;
-            
+
             while (i < text.length()) {
                 char c = text.charAt(i);
-                
+
                 if (c == '=') {
                     if (i + 2 < text.length()) {
                         String hex = text.substring(i + 1, i + 3);
@@ -303,14 +312,14 @@ public class ComandoEmail {
                     i++;
                 }
             }
-            
+
             // Convertir bytes a String UTF-8
             byte[] bytes = new byte[result.length()];
             for (int j = 0; j < result.length(); j++) {
                 bytes[j] = (byte) result.charAt(j);
             }
             return new String(bytes, "UTF-8");
-            
+
         } catch (Exception e) {
             System.err.println("Error en decodeQuotedPrintable: " + e.getMessage());
             return text;
@@ -371,7 +380,7 @@ public class ComandoEmail {
 
             switch (entidad) {
                 case "PRODUCTOS" -> {
-                    if (params.length != 11) {
+                    if (params.length != 10) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
                     Producto producto = new Producto();
@@ -384,12 +393,12 @@ public class ComandoEmail {
                     producto.stock_actual = Integer.parseInt(params[6]);
                     producto.stock_minimo = Integer.parseInt(params[7]);
                     producto.imagenurl = params[8];
-                    producto.unidad_medida = params[8];
                     producto.unidad_medida = params[9];
+
                     respuesta = productoService.create(producto.id_categoria, producto.codigo, producto.nombre,
                             producto.descripcion, producto.precio_compra, producto.precio_venta,
-                            producto.stock_actual, producto.stock_minimo, producto.imagenurl,
-                            producto.unidad_medida).toString();
+                            producto.stock_actual, producto.stock_minimo, producto.unidad_medida,
+                            producto.imagenurl);
 
                 }
 
@@ -446,13 +455,13 @@ public class ComandoEmail {
                     }
 
                     respuesta = horarioService.create(
-                            params[0],
-                            params[1],
-                            params[2],
-                            Integer.parseInt(params[3])).toString();
+                            Integer.parseInt(params[0]),  // id_barbero
+                            params[1],                     // dia_semana
+                            params[2],                     // hora_inicio
+                            params[3]).toString();         // hora_fin
                 }
                 case "SERVICIOS" -> {
-                    if (params.length != 3) {
+                    if (params.length != 5) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
 
@@ -462,6 +471,18 @@ public class ComandoEmail {
                             Integer.parseInt(params[2]),
                             new BigDecimal(params[3]),
                             params[4]).toString();
+                }
+                           
+                case "SERVICIOPRODUCTOS" -> {
+                    if (params.length != 3) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+                    ServicioProducto sp = new ServicioProducto();
+                    sp.id_servicio = Integer.parseInt(params[0]);
+                    sp.id_producto = Integer.parseInt(params[1]);
+                    sp.cantidad = Integer.parseInt(params[2]);
+
+                    respuesta = servicioProductoService.create(sp).toString();
                 }
                 /*
                  * case "RESERVAS" -> {
@@ -501,7 +522,7 @@ public class ComandoEmail {
             }
             switch (entidad) {
                 case "PRODUCTOS" -> {
-                    if (params.length != 10) {
+                    if (params.length != 11) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
                     respuesta = this.productoService.update(
@@ -543,7 +564,7 @@ public class ComandoEmail {
                             params[7]);
 
                 }
-                case "ClIENTES" -> {
+                case "CLIENTES" -> {
                     if (params.length != 4) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
@@ -556,30 +577,34 @@ public class ComandoEmail {
                     );
 
                 }
-                case "BARBEROS " -> {
-                    if (params.length != 4) {
+                case "BARBEROS" -> {
+                    if (params.length != 5) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
-                    respuesta = clienteService.update(
+                    Barbero barbero = new Barbero();
+                    barbero.id_barbero = Integer.parseInt(params[0]);
+                    barbero.id_usuario = Integer.parseInt(params[1]);
+                    barbero.especialidad = params[2];
+                    barbero.foto_perfil = params[3];
+                    barbero.estado = EstadoBarbero.parse(params[4]);
+
+                    respuesta = barberoService.update(
                             Integer.parseInt(params[0]),
-                            Integer.parseInt(params[1]),
-                            params[2],
-                            params[3]
+                            barbero
 
                     );
                 }
 
                 case "HORARIOS" -> {
-                    if (params.length != 4) {
+                    if (params.length != 5) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
                     }
                     respuesta = horarioService.update(
                             Integer.parseInt(params[0]),
                             Integer.parseInt(params[1]),
-                            Integer.parseInt(params[2]),
-                            params[3],
-                            LocalTime.parse(params[4]),
-                            LocalTime.parse(params[5]));
+                            params[2],
+                            LocalTime.parse(params[3]),
+                            LocalTime.parse(params[4]));
 
                 }
                 case "SERVICIOS" -> {
@@ -689,11 +714,11 @@ public class ComandoEmail {
                 case "CATEGORIAS" -> {
                     respuesta = this.categoriaService.toggleActive(entityId);
                 }
-                case "PRODCUTOS" -> {
+                case "PRODUCTOS" -> {
                     respuesta = this.productoService.delete(entityId);
                 }
                 case "SERVICIOS" -> {
-                    respuesta = this.servicioService.delete(entityId);
+                    respuesta = this.servicioService.toggleActive(entityId);
                 }
 
                 case "RESERVAS" -> {

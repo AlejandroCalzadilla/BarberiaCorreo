@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.barberia.usuarios.domain.enums.EstadoItem;
+import org.barberia.usuarios.mapper.ServicioMapper;
 
 public class Servicio {
 
@@ -33,4 +34,9 @@ public class Servicio {
     public String imagen;
     public LocalDateTime created_at;
     public LocalDateTime updated_at;
+
+    @Override
+    public String toString() {
+        return ServicioMapper.obtenerUnoTable(this);
+    }
 }

@@ -1,6 +1,5 @@
 package org.barberia.usuarios.repository.implentations;
 
-
 import org.barberia.usuarios.domain.enums.*;
 import org.barberia.usuarios.domain.Producto;
 import org.barberia.usuarios.infra.Database;
@@ -17,10 +16,13 @@ public class JdbcProductoRepository implements ProductoRepository {
         String sql = "SELECT id_producto, id_categoria, codigo, nombre, descripcion, precio_compra, stock_actual, stock_minimo, unidad_medida, estado, imagenurl, created_at, updated_at ,precio_venta FROM producto ORDER BY id_producto";
         List<Producto> list = new ArrayList<>();
         try (Connection con = Database.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) list.add(mapRow(rs));
-        } catch (SQLException e) { throw new RuntimeException(e); }
+                PreparedStatement ps = con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next())
+                list.add(mapRow(rs));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         return list;
     }
 
@@ -29,14 +31,20 @@ public class JdbcProductoRepository implements ProductoRepository {
         String sql = "SELECT id_producto, id_categoria, codigo, nombre, descripcion, precio_compra, stock_actual, stock_minimo, unidad_medida, estado, imagenurl, created_at, updated_at, precio_venta FROM producto WHERE id_producto=?";
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) { if (rs.next()) return Optional.of(mapRow(rs)); }
-        } catch (SQLException e) { throw new RuntimeException(e); }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return Optional.of(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         return Optional.empty();
     }
 
     @Override
     public Producto save(Producto p) {
-        if (p.id_producto == null) return insert(p);
+        if (p.id_producto == null)
+            return insert(p);
         return update(p);
     }
 
@@ -63,12 +71,14 @@ public class JdbcProductoRepository implements ProductoRepository {
                     p.updated_at = up != null ? up.toLocalDateTime() : null;
                 }
             }
-        } catch (SQLException e) { throw new RuntimeException(e); }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         return p;
     }
 
     private Producto update(Producto p) {
-        String sql = "UPDATE producto SET id_categoria=?, codigo=?, nombre=?, descripcion=?, precio_compra=?, stock_actual=?, stock_minimo=?, unidad_medida=?, estado=?::estado_item, imagenurl=?, updated_at=now(), precio_venta=? WHERE id_producto=? RETURNING created_at, updated_at";
+        String sql = "UPDATE producto SET id_categoria=?, codigo=?, nombre=?, descripcion=?, precio_compra=?, stock_actual=?, stock_minimo=?, unidad_medida=?, estado=?::estado_item, imagenurl=?, precio_venta=?, updated_at=now() WHERE id_producto=? RETURNING created_at, updated_at, estado";
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, p.id_categoria);
             ps.setString(2, p.codigo);
@@ -80,27 +90,56 @@ public class JdbcProductoRepository implements ProductoRepository {
             ps.setString(8, p.unidad_medida);
             ps.setString(9, p.estado != null ? p.estado.name() : EstadoItem.activo.name());
             ps.setString(10, p.imagenurl);
-            ps.setInt(11, p.id_producto);
-            ps.setBigDecimal(12, p.precio_venta);
+            ps.setBigDecimal(11, p.precio_venta);
+            ps.setInt(12, p.id_producto);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Timestamp cr = rs.getTimestamp("created_at");
                     Timestamp up = rs.getTimestamp("updated_at");
                     p.created_at = cr != null ? cr.toLocalDateTime() : null;
                     p.updated_at = up != null ? up.toLocalDateTime() : null;
+                    String estado = rs.getString("estado");
+                    if (estado != null)
+                        p.estado = EstadoItem.valueOf(estado);
                 }
             }
-        } catch (SQLException e) { throw new RuntimeException(e); }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         return p;
+    }
+
+    /*
+     * @Override
+     * public void deleteById(Integer id) {
+     * String sql = "DELETE FROM producto WHERE id_producto=?";
+     * try (Connection con = Database.getConnection(); PreparedStatement ps =
+     * con.prepareStatement(sql)) {
+     * ps.setInt(1, id);
+     * ps.executeUpdate();
+     * } catch (SQLException e) { throw new RuntimeException(e); }
+     * }
+     */
+    @Override
+    public void activateById(Integer id) {
+        String sql = "UPDATE producto SET estado='activo'::estado_item, updated_at=now() WHERE id_producto=?";
+        try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (SQLException e) { 
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void deleteById(Integer id) {
-        String sql = "DELETE FROM producto WHERE id_producto=?";
+        String sql = "UPDATE producto SET estado='inactivo'::estado_item, updated_at=now() WHERE id_producto=?";
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.executeUpdate();
-        } catch (SQLException e) { throw new RuntimeException(e); }
+        } catch (SQLException e) { 
+            throw new RuntimeException(e);
+        }
     }
 
     private Producto mapRow(ResultSet rs) throws SQLException {
@@ -115,7 +154,9 @@ public class JdbcProductoRepository implements ProductoRepository {
         p.stock_minimo = rs.getInt("stock_minimo");
         p.unidad_medida = rs.getString("unidad_medida");
         p.precio_venta = rs.getBigDecimal("precio_venta");
-        String est = rs.getString("estado"); if (est != null) p.estado = EstadoItem.valueOf(est);
+        String est = rs.getString("estado");
+        if (est != null)
+            p.estado = EstadoItem.valueOf(est);
         p.imagenurl = rs.getString("imagenurl");
         Timestamp cr = rs.getTimestamp("created_at");
         Timestamp up = rs.getTimestamp("updated_at");

@@ -49,10 +49,11 @@ public class HorarioSeeder {
                     // Crear horario usando el servicio
                     // El servicio espera strings, así que convertimos
                     var horario = horarioService.create(
-                        dia.name(),           // día de la semana
+                    barbero.id_barbero,    
+                    dia.name(),           // día de la semana
                         "09:00",             // hora de inicio
-                        "18:00",             // hora de fin
-                        barbero.id_barbero   // id del barbero
+                        "18:00"             // hora de fin
+                           // id del barbero
                     );
                     
                     createdIds.add(horario.id_horario);

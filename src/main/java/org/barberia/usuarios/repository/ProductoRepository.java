@@ -10,4 +10,5 @@ public interface ProductoRepository {
     Optional<Producto> findById(Integer id);
     Producto save(Producto p);
     void deleteById(Integer id);
+    void activateById(Integer id);
 }

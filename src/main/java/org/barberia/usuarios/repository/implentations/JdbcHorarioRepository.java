@@ -79,7 +79,7 @@ public class JdbcHorarioRepository implements HorarioRepository {
     }
 
     private Horario update(Horario h) {
-        String sql = "UPDATE horario SET id_barbero=?, dia_semana=?, hora_inicio=?, hora_fin=?, estado=?::estado_horario, updated_at=now() WHERE id_horario=? RETURNING created_at, updated_at";
+        String sql = "UPDATE horario SET id_barbero=?, dia_semana=?::dia_semana, hora_inicio=?, hora_fin=?, estado=?::estado_horario, updated_at=now() WHERE id_horario=? RETURNING created_at, updated_at, estado";
         try (Connection con = Database.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, h.id_barbero);
             ps.setString(2, h.dia_semana != null ? h.dia_semana.name() : DiaSemana.lunes.name());
@@ -93,6 +93,8 @@ public class JdbcHorarioRepository implements HorarioRepository {
                     Timestamp up = rs.getTimestamp("updated_at");
                     h.created_at = cr != null ? cr.toLocalDateTime() : null;
                     h.updated_at = up != null ? up.toLocalDateTime() : null;
+                    String estado = rs.getString("estado");
+                    if (estado != null) h.estado = EstadoHorario.valueOf(estado);
                 }
             }
         } catch (SQLException e) {

@@ -85,6 +85,7 @@ public class JdbcBarberoRepository implements BarberoRepository {
             ps.executeUpdate();
         } catch (SQLException e) { throw new RuntimeException(e); }
     }
+    
 
 
     @Override

@@ -27,7 +27,7 @@ public class HorarioService {
         return repo.findById(id).map(HorarioMapper::obtenerUnoTable).orElse("No se encontró horario con id=" + id);
     }
 
-    public Horario create(String dia_semana, String hora_inicio, String hora_fin, Integer id_barbero) {
+    public Horario create( Integer id_barbero,String dia_semana, String hora_inicio, String hora_fin) {
         // Normalizar y convertir la entrada al enum de forma tolerante
         DiaSemana dia = DiaSemana.parse(dia_semana);
         Horario h = new Horario();
@@ -55,10 +55,10 @@ public class HorarioService {
                 }
             }
         }
-        return repo.save(h);
+      return   repo.save(h);
     }
 
-    public String update(Integer id, 
+    public String update( 
     Integer id_horario,
     Integer id_barbero,
     String dia_semana,
@@ -71,14 +71,15 @@ public class HorarioService {
         h.id_horario=id_horario;
         h.id_barbero= id_barbero;
         h.dia_semana = DiaSemana.parse(dia_semana);
-        
+        h.hora_inicio = hora_inicio;
+        h.hora_fin = hora_fin;
         validator.validar(h);
-        h.id_horario = id;
+        h.id_horario = id_horario;
         
         // Validar que no se solape con otros horarios (excepto consigo mismo)
         List<Horario> horarios = repo.findAll();
         for (Horario horarioExistente : horarios) {
-            if (!horarioExistente.id_horario.equals(id) &&
+            if (!horarioExistente.id_horario.equals(id_horario) &&
                 horarioExistente.id_barbero.equals(h.id_barbero) &&
                 horarioExistente.dia_semana.equals(h.dia_semana)) {
                 if (horariosSeSuperponen(horarioExistente, h)) {
@@ -93,8 +94,7 @@ public class HorarioService {
 
     public String delete(Integer id) {
         repo.deleteById(id);
-        return "Horario con id=" + id + " eliminado " +
-                "\n" + getByIdAsTable(id);
+        return "Horario con id=" + id + " eliminado " ;
     }
 
     /**

@@ -51,20 +51,28 @@ public class BarberoService {
         return repo.save(b);
     }
 
-    public Barbero update(Integer id, Barbero b) {
+    public String update(Integer id, Barbero b) {
         validator.validar(b);
         Optional<Usuario> u = usuarioRepo.findById(b.id_usuario);
         if (u.isEmpty()) {
             throw new IllegalArgumentException("Usuario no encontrado");
         }
-        if (repo.findByUsuarioId(b.id_usuario).isPresent()) {
-            throw new IllegalArgumentException("El usuario ya está asociado a un barbero");
+        Barbero existingBarbero = repo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Barbero no encontrado"));
+
+        Optional<Barbero> barberoConMismoUsuario = repo.findByUsuarioId(b.id_usuario);
+        if (barberoConMismoUsuario.isPresent() && !barberoConMismoUsuario.get().id_barbero.equals(id)) {
+            throw new IllegalArgumentException("El usuario ya está asociado a otro barbero");
+
         }
         if (u.get().estado != EstadoUsuario.activo) {
             throw new IllegalArgumentException("El usuario debe estar activo para asociarse a un barbero");
         }
         b.id_barbero = id;
-        return repo.save(b);
+        Barbero bar = repo.save(b);
+        return "Barbero con id=" + bar.id_barbero + " actualizado " +
+                "\n" + getByIdAsTable(bar.id_barbero);
+
     }
 
     public String delete(Integer id) {
@@ -73,7 +81,7 @@ public class BarberoService {
             return usuarioRepo.findById(barbero.get().id_usuario)
                     .map(u -> {
                         if (u.estado == EstadoUsuario.activo) {
-                            usuarioRepo.deleteById(u.id);
+                            usuarioRepo.softDeleteById(u.id);
                             return "Barbero con id=" + id + " desactivado (soft delete)" + "\n" + getByIdAsTable(id);
                         } else {
                             usuarioRepo.activateById(u.id);
@@ -82,10 +90,9 @@ public class BarberoService {
                     })
                     .orElse("No se encontró usuario con id=" + id);
 
-        }
-        else{
-                throw new IllegalArgumentException("no existe barbero con id "+id);
-         
+        } else {
+            throw new IllegalArgumentException("no existe barbero con id " + id);
+
         }
     }
 

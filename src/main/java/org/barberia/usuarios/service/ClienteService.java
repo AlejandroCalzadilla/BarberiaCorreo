@@ -31,7 +31,7 @@ public class ClienteService {
         return repo.findById(id).map(ClienteMapper::obtenerUnoTable).orElse("No se encontró cliente con id=" + id);
     }
 
-    public Cliente create(Integer id_usuario, String fecha_nacimiento, String ci) {
+    public String create(Integer id_usuario, String fecha_nacimiento, String ci) {
         Cliente c = new Cliente();
         c.id_usuario = id_usuario;
         c.fecha_nacimiento = fecha_nacimiento;
@@ -47,7 +47,9 @@ public class ClienteService {
             throw new IllegalArgumentException("El usuario debe estar activo para asociarse a un cliente");
         }
         validator.validar(c);
-        return repo.save(c);
+        Cliente cliente = repo.save(c);
+         return "Cliente con id=" + cliente.id_cliente + " creado" +
+                "\n" + getByIdAsTable(cliente.id_cliente);
     }
 
     public String update(
@@ -65,15 +67,17 @@ public class ClienteService {
         validator.validar(c);
         Optional <Cliente> cliente= repo.findById(id_cliente);
         if(cliente.isEmpty()){
-             throw new IllegalArgumentException("Cleinte no econtrado");
+             throw new IllegalArgumentException("Cliente no econtrado");
         
         } 
         Optional<Usuario> u = usuarioRepo.findById(c.id_cliente);
         if (u.isEmpty()) {
             throw new IllegalArgumentException("Usuario no encontrado");
         }
-        if (repo.findByUsuarioId(c.id_usuario).isPresent()) {
-            throw new IllegalArgumentException("El usuario ya está asociado a un cliente");
+        Optional<Cliente> clienteConMismoUsuario = repo.findByUsuarioId(c.id_usuario);
+        if (clienteConMismoUsuario.isPresent() && !clienteConMismoUsuario.get().id_cliente.equals(id_cliente)) {
+            throw new IllegalArgumentException("El usuario ya está asociado a otro cliente");
+
         }
         if (u.get().estado != EstadoUsuario.activo) {
             throw new IllegalArgumentException("El usuario debe estar activo para asociarse a un cliente");

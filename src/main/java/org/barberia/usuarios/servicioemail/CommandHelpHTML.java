@@ -47,13 +47,13 @@ public class CommandHelpHTML {
                 "CREATE", "BARBEROS",
                 "Crear un nuevo barbero",
                 "id_usuario, especialidad, foto_perfil",
-                "CREATEBARBEROS[1, Corte de cabello, Juan, Perez, 555-1234, juan.perez@example.com, Calle Falsa 123]"));
+                "CREATEBARBEROS[1, Corte de cabello,perfiljuan.jpg]"));
 
         COMMANDS.add(new CommandExample(
                 "CREATE", "SERVICIOS",
                 "Crear un nuevo servicio",
-                "nombre, descripcion, precio, duracion",
-                "CREATESERVICIOS[Corte de cabello, Servicio profesional, 50.00, 45]"));
+                "nombre, descripcion,duracion_minutos_aprox, precio,imagenurl",
+                "CREATESERVICIOS[Corte de cabello, Servicio profesional, 50, 45.00, imagencorte.jpg]"));
 
         COMMANDS.add(new CommandExample(
                 "CREATE", "USUARIOS",
@@ -101,8 +101,8 @@ public class CommandHelpHTML {
         COMMANDS.add(new CommandExample(
                 "UPDATE", "BARBEROS",
                 "Actualizar un barbero",
-                "id_barbero, id_usuario, especialidad, foto_perfil",
-                "UPDATEBARBEROS[1, 1, Corte de cabello, juan.perez@example.com, Calle Falsa 123]"));
+                "id_barbero, id_usuario, especialidad, foto_perfil,estado (disponible/nodisponible)",
+                "UPDATEBARBEROS[1, 1, Corte de cabello, juanperezperfil.jpg, disponible]"));
 
         COMMANDS.add(new CommandExample(
                 "UPDATE", "SERVICIOS",
