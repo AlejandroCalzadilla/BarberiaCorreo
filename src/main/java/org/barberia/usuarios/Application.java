@@ -63,7 +63,7 @@ public class Application {
           servicioRepository,barberoRepository ,usuarioRepository, horarioRepository,servicioProductoRepository, productoRepository);
     CommandHelp commandHelp = new CommandHelp();
 
-    System.out.println(commandHelp.obtenerComandosDisponibles());
+    //System.out.println(commandHelp.obtenerComandosDisponibles());
 
      
      DbSeeder dbSeeder = new DbSeeder(
@@ -81,10 +81,11 @@ public class Application {
         usuarioRepository
          
         );
+        dbSeeder.seed();
  
-       ReporteService reporteService = new ReporteService();  
+     /*   ReporteService reporteService = new ReporteService();   */
        // dbSeeder.seed();
-       ReporteEjemplos reporteEjemplos = new ReporteEjemplos(reporteService);
+     /*   ReporteEjemplos reporteEjemplos = new ReporteEjemplos(reporteService); */
 
        //System.out.println(reporteEjemplos.ejemploDashboardGeneral());
        try {

@@ -103,6 +103,22 @@ public class UsuarioSeeder {
                                 EstadoUsuario.activo,
                                 "carlos.ramirez",
                                 "password");
+                Usuario empleadoUser4 = new Usuario(null, "carlos",
+                                "ramirez",
+                                "carlos.ramirez2@example.com",
+                                "5566778899",
+                                "Avenida de la Esperanza 988",
+                                EstadoUsuario.activo,
+                                "carlos.ramirez2",
+                                "password");
+                Usuario empleadoUser5 = new Usuario(null, "carlos",
+                                "ramirez",
+                                "carlos.ramirez3@example.com",
+                                "6677889900",
+                                "Avenida de la Esperanza 989",
+                                EstadoUsuario.activo,
+                                "carlos.ramirez3",
+                                "password");
 
                 usuarios.add(usuarioRepository.save(adminUser));
                 usuarios.add(usuarioRepository.save(regularUser));
@@ -115,6 +131,8 @@ public class UsuarioSeeder {
                 usuarios.add(usuarioRepository.save(empleadoUser2));
                 usuarios.add(usuarioRepository.save(clienteUser2));
                 usuarios.add(usuarioRepository.save(empleadoUser3));
+                usuarios.add(usuarioRepository.save(empleadoUser4));
+                usuarios.add(usuarioRepository.save(empleadoUser5));
                 return usuarios;
         }
 

@@ -1,0 +1,193 @@
+@startuml Arquitectura en Capas - Sistema de Barbería
+
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontSize 12
+
+title Arquitectura en Capas - Sistema de Gestión de Barbería\n
+
+title Arquitectura en Capas - Sistema de Gestión de Barbería\n
+
+' ==================== CAPA DE PRESENTACIÓN (EMAIL) ====================
+package "CAPA DE PRESENTACIÓN" as presentation #E3F2FD {
+    component "ServicioEmail\n(Main)" as servicio #FFB74D
+    component "ClienteSMTP\n(Protocolo SMTP)" as smtp #FFB74D
+    component "ComandoEmail\n(Procesador de Comandos)" as comando #FFB74D
+    component "CommandHelpHTML\n(Documentación)" as help #FFB74D
+}
+
+' ==================== CAPA DE NEGOCIO (CRUD) ====================
+package "CAPA DE NEGOCIO" as negocio #E8F5E9 {
+    
+    package "Services\n(Lógica de Negocio)" as services {
+        component "UsuarioService" as us #4CAF50
+        component "BarberoService" as bs #4CAF50
+        component "ClienteService" as cs #4CAF50
+        component "ProductoService" as ps #4CAF50
+        component "CategoriaService" as cats #4CAF50
+        component "HorarioService" as hs #4CAF50
+        component "ServicioService" as ss #4CAF50
+        component "ReservaService" as rs #4CAF50
+        component "PagoService" as pags #4CAF50
+        component "ReporteService" as reps #4CAF50
+    }
+    
+    package "Repositories\n(Acceso a Datos)" as repos {
+        interface "UsuarioRepository" as ur
+        interface "BarberoRepository" as br
+        interface "ClienteRepository" as cr
+        interface "ProductoRepository" as pr
+        interface "CategoriaRepository" as catr
+        interface "HorarioRepository" as hr
+        interface "ServicioRepository" as sr
+        interface "ReservaRepository" as rr
+        interface "PagoRepository" as pagr
+    }
+    
+    package "Implementations\n(JDBC)" as impls {
+        component "JdbcUsuarioRepository" as jur #9C27B0
+        component "JdbcBarberoRepository" as jbr #9C27B0
+        component "JdbcClienteRepository" as jcr #9C27B0
+        component "JdbcProductoRepository" as jpr #9C27B0
+        component "JdbcCategoriaRepository" as jcatr #9C27B0
+        component "JdbcHorarioRepository" as jhr #9C27B0
+        component "JdbcServicioRepository" as jsr #9C27B0
+        component "JdbcReservaRepository" as jrr #9C27B0
+        component "JdbcPagoRepository" as jpagr #9C27B0
+    }
+    
+    package "Validators\n(Validaciones)" as validators {
+        component "UsuarioValidator" as uv #81C784
+        component "BarberoValidator" as bv #81C784
+        component "ClienteValidator" as cv #81C784
+        component "ProductoValidator" as pv #81C784
+        component "Otros Validators..." as ov #81C784
+    }
+    
+    package "Mappers\n(Formateo)" as mappers {
+        component "UsuarioMapper" as um #A5D6A7
+        component "ProductoMapper" as pm #A5D6A7
+        component "ReporteMapper" as rm #A5D6A7
+        component "Otros Mappers..." as om #A5D6A7
+    }
+}
+
+' ==================== CAPA DE DOMINIO ====================
+package "CAPA DE DOMINIO" as dominio #FFF3E0 {
+    component "Usuario\nBarbero\nCliente\nProducto\nCategoria\nHorario\nServicio\nReserva\nPago" as entities #FF9800
+    component "Enums\n(Estados, Tipos)" as enums #FFB74D
+}
+
+' ==================== CAPA DE INFRAESTRUCTURA ====================
+package "CAPA DE INFRAESTRUCTURA" as infra #FFEBEE {
+    component "Database\n(Connection Pool)" as db #F44336
+    component "Seeders\n(Datos de Prueba)" as seeders #EF5350
+}
+
+database "PostgreSQL\nBase de Datos" as postgres #FF5252
+
+' ==================== RELACIONES ====================
+
+' Presentación -> Negocio
+servicio --> comando
+comando --> smtp
+comando --> help
+comando -down-> us
+comando -down-> bs
+comando -down-> cs
+comando -down-> ps
+comando -down-> cats
+comando -down-> hs
+comando -down-> ss
+comando -down-> rs
+comando -down-> pags
+comando -down-> reps
+
+' Services -> Repositories, Validators, Mappers
+us -down-> ur
+us --> uv
+us --> um
+
+bs --> br
+bs --> bv
+
+cs --> cr
+cs --> cv
+
+ps --> pr
+ps --> pv
+ps --> pm
+
+cats --> catr
+hs --> hr
+ss --> sr
+rs --> rr
+pags --> pagr
+reps --> rm
+
+' Repositories -> Implementations
+ur <|.. jur
+br <|.. jbr
+cr <|.. jcr
+pr <|.. jpr
+catr <|.. jcatr
+hr <|.. jhr
+sr <|.. jsr
+rr <|.. jrr
+pagr <|.. jpagr
+
+' Implementations -> Database
+jur -down-> db
+jbr -down-> db
+jcr -down-> db
+jpr -down-> db
+jcatr -down-> db
+jhr -down-> db
+jsr -down-> db
+jrr -down-> db
+jpagr -down-> db
+
+' Database -> PostgreSQL
+db -down-> postgres
+
+' Seeders -> Database
+seeders --> db
+
+' Services -> Domain
+us ..> entities
+bs ..> entities
+cs ..> entities
+ps ..> entities
+rs ..> entities
+pags ..> entities
+
+entities ..> enums
+
+' ==================== NOTAS ====================
+
+note top of presentation
+  **CORREO ELECTRÓNICO**
+  • Recibe comandos por email
+  • Procesa sintaxis de comandos
+  • Envía respuestas HTML por SMTP
+  • Interfaz principal del sistema
+end note
+
+note top of negocio
+  **OPERACIONES CRUD**
+  • Services: Lógica de negocio y validaciones
+  • Repositories: Contratos de acceso a datos
+  • Implementations: Conexión JDBC a PostgreSQL
+  • Validators: Reglas de validación
+  • Mappers: Formateo de datos para respuestas
+end note
+
+note top of infra
+  **CONEXIÓN A BASE DE DATOS**
+  • Pool de conexiones PostgreSQL
+  • Configuración de base de datos
+  • Seeders para datos iniciales
+end note
+
+@enduml

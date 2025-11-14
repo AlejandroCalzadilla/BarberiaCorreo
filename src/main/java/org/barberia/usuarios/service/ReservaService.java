@@ -80,7 +80,6 @@ public class ReservaService {
             Integer id_servicio,
             LocalDate fecha_reserva,
             LocalTime hora_inicio,
-            LocalTime hora_fin,
             String notas) {
 
         // Crear reserva
@@ -90,7 +89,6 @@ public class ReservaService {
         r.id_servicio = id_servicio;
         r.fecha_reserva = fecha_reserva;
         r.hora_inicio = hora_inicio;
-        r.hora_fin = hora_fin;
         r.notas = notas;
         r.estado = EstadoReserva.confirmada;
         // Validar estructura básica
@@ -106,6 +104,17 @@ public class ReservaService {
             throw new IllegalArgumentException("El barbero no está activo  o no existe. No se pueden crear reservas.");
         }
         // 3. Verificar que la fecha/hora estén dentro del horario del barbero
+        
+         Optional<Servicio> servicioOpt = servicioRepo.findById(r.id_servicio);
+        if (servicioOpt.isEmpty()) {
+            throw new IllegalArgumentException("El servicio con ID " + r.id_servicio + " no existe.");
+        }
+        Servicio servicio = servicioOpt.get();
+        r.total = servicio.precio;
+        r.monto_anticipo = r.total.multiply(BigDecimal.valueOf(0.5)); // 50% de anticipo
+        r.precio_servicio = servicio.precio;
+        r.hora_fin = r.hora_inicio.plusMinutes(servicio.duracion_minutos_aprox); 
+        
         DayOfWeek dayOfWeek = fecha_reserva.getDayOfWeek();
         DiaSemana diaSemana = convertirDayOfWeekADiaSemana(dayOfWeek);
         List<Horario> horarios = horarioRepo.findAll();
@@ -114,7 +123,7 @@ public class ReservaService {
             if (h.id_barbero.equals(id_barbero) && h.dia_semana == diaSemana) {
                 // Verificar que la hora de inicio y fin estén dentro del horario
                 if (!hora_inicio.isBefore(h.hora_inicio) &&
-                        !hora_fin.isAfter(h.hora_fin)) {
+                        !r.hora_fin.isAfter(h.hora_fin)) {
                     horarioValido = true;
                     break;
                 }
@@ -124,19 +133,11 @@ public class ReservaService {
             throw new IllegalArgumentException(
                     String.format("El barbero no tiene disponibilidad el día %s entre las %s y %s. " +
                             "Verifique los horarios del barbero.",
-                            diaSemana, hora_inicio, hora_fin));
+                            diaSemana, hora_inicio, r.hora_fin));
         }
 
         // 4. Obtener información del servicio para calcular totales
-        Optional<Servicio> servicioOpt = servicioRepo.findById(r.id_servicio);
-        if (servicioOpt.isEmpty()) {
-            throw new IllegalArgumentException("El servicio con ID " + r.id_servicio + " no existe.");
-        }
-        Servicio servicio = servicioOpt.get();
-        r.total = servicio.precio;
-        r.monto_anticipo = r.total.multiply(BigDecimal.valueOf(0.5)); // 50% de anticipo
-        r.precio_servicio = servicio.precio;
-
+       
         // 5. Verificar y descontar stock de productos asociados al servicio
         List<ServicioProducto> serviciosProductos = servicioProductoRepo.findByServicioId(r.id_servicio);
         
@@ -186,6 +187,14 @@ public class ReservaService {
 
         validator.validar(r);
         r.id_reserva = id;
+        r.hora_fin = r.hora_inicio.plusMinutes(
+                servicioRepo.findById(r.id_servicio)
+                        .map(s -> s.duracion_minutos_aprox)
+                        .orElse(60)); // Valor por defecto si no se encuentra el servicio
+        r.total = reservaAnterior.total;
+
+
+        
 
         // Si se cambian fecha, hora o barbero, validar horarios
         boolean cambioFechaHoraBarbero = !r.fecha_reserva.equals(reservaAnterior.fecha_reserva) ||

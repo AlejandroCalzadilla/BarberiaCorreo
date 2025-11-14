@@ -8,7 +8,6 @@ public class ReservaValidator {
         if (r.id_cliente == null) throw new IllegalArgumentException("id_cliente es requerido");
         if (r.id_barbero == null) throw new IllegalArgumentException("id_barbero es requerido");
         if (r.id_servicio == null) throw new IllegalArgumentException("id_servicio es requerido");
-        if (r.hora_inicio == null || r.hora_fin == null) throw new IllegalArgumentException("hora_inicio y hora_fin son requeridos");
-        if (!r.hora_fin.isAfter(r.hora_inicio)) throw new IllegalArgumentException("hora_fin debe ser mayor a hora_inicio");
+        if (r.hora_inicio == null) throw new IllegalArgumentException("hora_inicio es requerido");
         }
 }

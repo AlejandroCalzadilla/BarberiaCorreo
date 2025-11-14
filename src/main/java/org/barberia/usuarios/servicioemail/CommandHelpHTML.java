@@ -76,8 +76,13 @@ public class CommandHelpHTML {
         COMMANDS.add(new CommandExample(
                 "CREATE", "RESERVAS",
                 "Crear una nueva reserva (valida barbero activo y horario)",
-                "id_cliente, id_barbero, id_servicio, fecha_reserva(YYYY-MM-DD), hora_inicio(HH:MM), hora_fin(HH:MM), notas",
-                "CREATERESERVAS[1, 1, 1, 2024-12-01, 10:00, 11:00, reserva para corte de cabello]"));
+                "id_cliente, id_barbero, id_servicio, fecha_reserva(YYYY-MM-DD), hora_inicio(HH:MM), notas",
+                "CREATERESERVAS[1, 1, 1, 2024-12-01, 10:00, reserva para corte de cabello]"));
+        COMMANDS.add(new CommandExample(
+                "CREATE", "PAGOS",
+                "Crear un nuevo pago",
+                "id_reserva,monto, metodo_pago(efectivo, tarjeta,transferencia, otro), tipo_pago(anticipo, pago_final, pago_completo), notas",
+                "CREATEPAGOS[1, 50.00, tarjeta, anticipo, pago por corte de cabello]"));        
 
         // UPDATE commands
         COMMANDS.add(new CommandExample(
@@ -131,14 +136,14 @@ public class CommandHelpHTML {
         COMMANDS.add(new CommandExample(
                 "UPDATE", "RESERVAS",
                 "Actualizar una reserva (valida barbero activo y horario si cambian)",
-                "id_reserva, id_cliente, id_barbero, id_servicio, fecha_reserva(YYYY-MM-DD), hora_inicio(HH:MM), hora_fin(HH:MM), notas, estado",
-                "UPDATERESERVAS[1, 1, 1, 1, 2024-12-01, 10:00, 11:00, reserva para corte de cabello, completada]"));
+                "id_reserva, id_cliente, id_barbero, id_servicio, fecha_reserva(YYYY-MM-DD), hora_inicio(HH:MM), notas, estado",
+                "UPDATERESERVAS[1, 1, 1, 1, 2024-12-01, 10:00, reserva para corte de cabello, completada]"));
 
         COMMANDS.add(new CommandExample(
                 "UPDATE", "PAGOS",
                 "Actualizar un pago",
-                "id_pago, id_reserva, metodo_pago, tipo_pago, notas",
-                "UPDATEPAGOS[1, 1, tarjeta, servicio, pago por corte de cabello]"));
+                "id_pago, id_reserva,monto, metodo_pago(efectivo, tarjeta,transferencia, otro), tipo_pago(anticipo, pago_final, pago_completo),notas,estado( pendiente, pagado, cancelado, reembolsado)",
+                "UPDATEPAGOS[1, 1,50.00,tarjeta, pago_final, pago por corte de cabello, pagado]"));
     }
 
     public static String obtenerComandosDisponibles() {

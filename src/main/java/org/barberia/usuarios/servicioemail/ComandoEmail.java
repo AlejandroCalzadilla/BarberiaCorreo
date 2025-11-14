@@ -22,6 +22,7 @@ import org.barberia.usuarios.domain.Servicio;
 import org.barberia.usuarios.domain.ServicioProducto;
 import org.barberia.usuarios.domain.Usuario;
 import org.barberia.usuarios.domain.enums.EstadoBarbero;
+import org.barberia.usuarios.domain.enums.EstadoPago;
 import org.barberia.usuarios.domain.enums.EstadoReserva;
 import org.barberia.usuarios.domain.enums.MetodoPago;
 import org.barberia.usuarios.domain.enums.TipoPago;
@@ -455,10 +456,10 @@ public class ComandoEmail {
                     }
 
                     respuesta = horarioService.create(
-                            Integer.parseInt(params[0]),  // id_barbero
-                            params[1],                     // dia_semana
-                            params[2],                     // hora_inicio
-                            params[3]).toString();         // hora_fin
+                            Integer.parseInt(params[0]), // id_barbero
+                            params[1], // dia_semana
+                            params[2], // hora_inicio
+                            params[3]).toString(); // hora_fin
                 }
                 case "SERVICIOS" -> {
                     if (params.length != 5) {
@@ -472,7 +473,7 @@ public class ComandoEmail {
                             new BigDecimal(params[3]),
                             params[4]).toString();
                 }
-                           
+
                 case "SERVICIOPRODUCTOS" -> {
                     if (params.length != 3) {
                         throw new IllegalArgumentException("Número de parámetros incorrecto");
@@ -484,25 +485,43 @@ public class ComandoEmail {
 
                     respuesta = servicioProductoService.create(sp).toString();
                 }
-                /*
-                 * case "RESERVAS" -> {
-                 * if (params.length != 5) {
-                 * throw new IllegalArgumentException("Número de parámetros incorrecto");
-                 * }
-                 * 
-                 * respuesta = reservaService.createConTransaccion(
-                 * Integer.parseInt(params[0]),
-                 * Integer.parseInt(params[1]),
-                 * Integer.parseInt(params[2]),
-                 * LocalDate.parse(params[3]),
-                 * LocalTime.parse(params[4]),
-                 * LocalTime.parse(params[5]),
-                 * params[6],
-                 * params[7],
-                 * params[8],
-                 * params[9]).toString();
-                 * }
-                 */
+
+                case "RESERVAS" -> {
+                    if (params.length != 6) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+
+                    Reserva reserva = new Reserva();
+                    reserva.id_cliente = Integer.parseInt(params[0]);
+                    reserva.id_barbero = Integer.parseInt(params[1]);
+                    reserva.id_servicio = Integer.parseInt(params[2]);
+                    reserva.fecha_reserva = LocalDate.parse(params[3]);
+                    reserva.hora_inicio = LocalTime.parse(params[4]);
+                    reserva.notas = params[5];
+                    respuesta = reservaService.create(
+                            reserva.id_cliente,
+                            reserva.id_barbero,
+                            reserva.id_servicio,
+                            reserva.fecha_reserva,
+                            reserva.hora_inicio,
+                            reserva.notas).toString();
+                }
+                case "PAGOS" -> {
+                    if (params.length != 5) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+
+                    Pago pago = new Pago();
+                    pago.id_reserva = Integer.parseInt(params[0]);
+                    pago.monto_total = new BigDecimal(params[1]);
+                    pago.metodo_pago = MetodoPago.parse(params[2]);
+                    pago.tipo_pago = TipoPago.parse(params[3]);
+                    pago.notas = params[4];
+
+                    respuesta = pagoService.create(
+                            pago,
+                            pago.id_reserva).toString();
+                }
 
                 default -> respuesta = "Entidad no encontrada";
             }
@@ -633,51 +652,53 @@ public class ComandoEmail {
                             Integer.parseInt(params[2])).toString();
 
                 }
-                /*
-                 * case "RESERVAS" -> {
-                 * 
-                 * //"id_cliente ,id_barbero ,id_servicio ,fecha_reserva ,hora_inicio, hora_fin,notas,opcional estado(confirmada, cancelada,completada,no_asistio) "
-                 * ,
-                 * 
-                 * Reserva r = new Reserva();
-                 * r.id_reserva = Integer.parseInt(params[0]);
-                 * r.id_cliente = Integer.parseInt(params[1]);
-                 * r.id_barbero = Integer.parseInt(params[2]);
-                 * r.id_servicio = Integer.parseInt(params[3]);
-                 * r.fecha_reserva = LocalDate.parse(params[4]);
-                 * r.hora_inicio = LocalTime.parse(params[5]);
-                 * r.hora_fin = LocalTime.parse(params[6]);
-                 * r.notas = params[7];
-                 * r.estado = EstadoReserva.parse(params[8]);
-                 * 
-                 * 
-                 * respuesta = reservaService.updateConTransaccion(
-                 * Integer.parseInt(params[0]),
-                 * r
-                 * ).toString();
-                 * 
-                 * }
-                 */
-                /*
-                 * case "PAGOS" -> {
-                 * if (params.length != 5) {
-                 * throw new IllegalArgumentException("Número de parámetros incorrecto");
-                 * }
-                 * 
-                 * Pago p = new Pago();
-                 * p.id_pago = Integer.parseInt(params[0]);
-                 * p.id_reserva = Integer.parseInt(params[1]);
-                 * p.metodo_pago = MetodoPago.parse(params[2]);
-                 * p.tipo_pago = TipoPago.parse(params[3]);
-                 * p.notas = params[4];
-                 * 
-                 * respuesta = pagoService.updateReserva (
-                 * p,
-                 * Integer.parseInt(params[0])
-                 * );
-                 * 
-                 * }
-                 */
+                
+                  case "RESERVAS" -> {
+                  
+                  //"id_cliente ,id_barbero ,id_servicio ,fecha_reserva ,hora_inicio, hora_fin,notas,opcional estado(confirmada, cancelada,completada,no_asistio) "
+                  
+                  
+                    if (params.length != 8) {
+                            throw new IllegalArgumentException("Número de parámetros incorrecto");
+                        }
+                        
+                        Reserva r = new Reserva();
+                        r.id_reserva = Integer.parseInt(params[0]);
+                        r.id_cliente = Integer.parseInt(params[1]);
+                        r.id_barbero = Integer.parseInt(params[2]);
+                        r.id_servicio = Integer.parseInt(params[3]);
+                        r.fecha_reserva = LocalDate.parse(params[4]);
+                        r.hora_inicio = LocalTime.parse(params[5]);
+                        r.notas = params[6];
+                        r.estado = EstadoReserva.parse(params[7]);
+    
+                        respuesta = reservaService.update(
+                             Integer.parseInt(params[0]),
+                                r
+                               ).toString();
+                  
+                  }
+                 
+
+                case "PAGOS" -> {
+                    if (params.length != 7) {
+                        throw new IllegalArgumentException("Número de parámetros incorrecto");
+                    }
+
+                    Pago p = new Pago();
+                    p.id_pago = Integer.parseInt(params[0]);
+                    p.id_reserva = Integer.parseInt(params[1]);
+                    p.monto_total = new BigDecimal(params[2]);
+                    p.metodo_pago = MetodoPago.parse(params[3]);
+                    p.tipo_pago = TipoPago.parse(params[4]);
+                    p.notas = params[5];
+                    p.estado = EstadoPago.parse(params[6]);
+
+                    respuesta = pagoService.update(
+                            p,
+                            Integer.parseInt(params[0]));
+
+                }
 
                 default -> respuesta = "Entidad no encontrada";
             }

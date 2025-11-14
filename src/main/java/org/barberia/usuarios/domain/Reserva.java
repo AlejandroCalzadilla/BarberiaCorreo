@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import org.barberia.usuarios.domain.enums.EstadoReserva;
+import org.barberia.usuarios.mapper.ProductoMapper;
+import org.barberia.usuarios.mapper.ReservaMapper;
 
 public class Reserva {
     public Integer id_reserva;
@@ -22,4 +24,13 @@ public class Reserva {
     public BigDecimal monto_anticipo;
     public LocalDateTime created_at;
     public LocalDateTime updated_at;
+
+
+     @Override
+    public String toString() {
+        return ReservaMapper.obtenerUnoTable(
+                this);
+    }
+
+
 }

@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import org.barberia.usuarios.domain.enums.EstadoPago;
 import org.barberia.usuarios.domain.enums.MetodoPago;
 import org.barberia.usuarios.domain.enums.TipoPago;
+import org.barberia.usuarios.mapper.PagoMapper;
+import org.barberia.usuarios.mapper.ProductoMapper;
 
 public class Pago {
     public Integer id_pago;
@@ -18,4 +20,12 @@ public class Pago {
     public String notas;
     public LocalDateTime created_at;
     public LocalDateTime updated_at;
+
+
+    @Override
+    public String toString() {
+        return PagoMapper.obtenerUnoTable(
+                this);
+    } 
+
 }
